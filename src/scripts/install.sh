@@ -7,3 +7,5 @@ sudo ln -sf $DIR/bin/v.py /bin/v
 sudo ln -sf $DIR/bin/tpl.py /bin/tpl
 sudo ln -sf $DIR/bin/auto_complete.py /bin/autoComplete
 sudo ln -sf $DIR/gbl.sh /bin/gbl
+
+tpl -i $DIR/tpls/bashrc.tpl -r -o $HOME/.bashrc -v BASHRC_INC=$DIR/gbl_bashrc.inc.sh

@@ -7,9 +7,7 @@ eval "$(d _print_autocomplete d)"
 
 # 'j' jump Shortcut
 _gbl_my_jump(){
-	local COLOR_GREEN='\e[0;32m'
-	local COLOR_NONE='\e[0m' # No Color
-	local COLOR_RED='\e[0;31m'
+
 	case "$1" in
 	"get")
 		v get -t path $2
@@ -85,9 +83,6 @@ _gbl_my_ssh_usage(){
 
 
 _gbl_my_ssh(){
-	local COLOR_GREEN='\e[0;32m'
-	local COLOR_NONE='\e[0m' # No Color
-	local COLOR_RED='\e[0;31m'
 	local isSCP=0
 	case "$1" in
 	"get")

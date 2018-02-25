@@ -2,9 +2,6 @@
 d_file=$HOME/d.bl.sh
 if [ -f $d_file ] ; then
 	source $d_file
-else
-	echo "$d_file does NOT exist!"
-	exit 1
 fi
 
 #run G_BASH_LIB
