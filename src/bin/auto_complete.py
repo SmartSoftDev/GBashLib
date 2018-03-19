@@ -13,7 +13,6 @@ import argparse
 import yaml
 from tabulate import tabulate
 import os
-from ghepy.term.colors import COLOR_NONE, COLOR_CYAN, COLOR_GREEN
 from ghepy.fs.find import find_re_array
 
 C= lambda: None
