@@ -1,4 +1,4 @@
-. $G_BASH_LIB/libs/input.lib.bsh
+. $(gbl input)
 
 function add_j(){
 	v set -t path $1

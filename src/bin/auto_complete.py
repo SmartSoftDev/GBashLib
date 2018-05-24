@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 '''
-AUto complete helper. 
+Auto complete helper.
 TODO: 
 * de facut variata de intrebat autoCOmpleteul de la Binar direct. 
 * de implementat posibilitatea de a adauga/stergerea intru-un anumit yaml file.
@@ -13,14 +13,13 @@ import argparse
 import yaml
 from tabulate import tabulate
 import os
-from ghepy.fs.find import find_re_array
 
 C= lambda: None
 C.keys= lambda: None
 C.keys.cfgImport='import'
 cfg= lambda: None
 cfg.path= os.environ['HOME']
-cfg.dbPath=os.path.join(cfg.path,".auto_complete.yaml")
+cfg.dbPath=os.path.join(cfg.path, ".auto_complete.yaml")
 
 cfg.config={C.keys.cfgImport:[]} #import is mandatory key
 cfg.description={} #default nothing
@@ -180,12 +179,16 @@ def cmd_get():
     print ' '.join(ret)
 
 def cmd_import():
-    reg_exp= ".*\.autocomplete\.yaml$"
-    files = find_re_array(cfg.args.importDirectory, [reg_exp], "^\.")[reg_exp]
-    print yaml.dump(cfg.description)
-    print yaml.dump(cfg.config)
+    expected_file_name= ".autocomplete.yaml"
+    found_files = []
     
-    for fpath in files:
+    for root, dirs, files in os.walk(cfg.args.importDirectory, followlinks= True):
+        for i in files:
+            if i.endswith(expected_file_name):
+                fpath= os.path.join(root,i)
+                found_files.append(fpath)
+
+    for fpath in found_files:
         fpath= os.path.abspath(fpath)
         if fpath in cfg.config[C.keys.cfgImport]:
             print "This file is already imported %r" % fpath

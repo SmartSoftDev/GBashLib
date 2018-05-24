@@ -2,44 +2,51 @@
 import os
 import argparse
 import sys
-from ghepy.sql.schema_db import SQLiteSchemaDb
-from ghepy.term.colors import COLOR_NONE, COLOR_CYAN, COLOR_GREEN
+import yaml
+#from ghepy.term.colors 
+COLOR_NONE='\033[0m' # No Color
+COLOR_GREEN='\033[0;32m'
+COLOR_CYAN='\033[0;36m'
 
+DEFAULT_NAME_TYPE='.'
 cfg= lambda: None
 cfg.path= os.environ['HOME']
-cfg.dbPath=os.path.join(cfg.path,".v.db.sqlite3")
+cfg.dbPath=os.path.join(cfg.path,".v.yaml")
+cfg.config = {}
 
-def get_db():
+def read_config():
     if not os.path.exists(cfg.path):
         os.makedirs(cfg.path)
-        
-    db= SQLiteSchemaDb(cfg.dbPath, None)
+    #read config file    
     if not os.path.exists(cfg.dbPath):
-        db.connect()
-        db.run('CREATE TABLE vars( id INTEGER PRIMARY KEY ASC, name TEXT, value TEXT, type TEXT);')
-        db.run('CREATE UNIQUE INDEX vars_ndx ON vars (name, type);');
+        save_config()
     else:
-        db.connect()
-    return db
+        with open(cfg.dbPath) as f:
+            cfg.config = yaml.load(f)
+    
+def save_config():
+    with open(cfg.dbPath, "w") as f:
+        yaml.dump(cfg.config, f)
 
-def print_one(cfg, r,last=False):
+
+def print_one(cfg, name, value, last=False):
     args= cfg.args
-    s= r[0]
+    s= name
     if sys.stdout.isatty() or args.decorate:
-        s= "%s%s%s" %(COLOR_CYAN,r[0],COLOR_NONE,)
+        s = "%s%s%s" %(COLOR_CYAN, name, COLOR_NONE,)
         if args.value_only:
-            s= "%s%s%s" %(COLOR_GREEN,r[1],COLOR_NONE)
+            s = "%s%s%s" %(COLOR_GREEN,value,COLOR_NONE)
         elif not args.name_only:
-            s+= " = %s%s%s" %(COLOR_GREEN,r[1],COLOR_NONE)
+            s += " = %s%s%s" %(COLOR_GREEN, value, COLOR_NONE)
     else:
         if args.value_only:
-            s= r[1]
+            s = name
         elif not args.name_only:
-            s+= "=" + r[1]
+            s += "=" + value
     if last:
-        s+= "\n"
+        s += "\n"
     else:
-        s+= args.separator
+        s += args.separator
     sys.stdout.write( s)
      
 def main():
@@ -49,18 +56,18 @@ def main():
     sp= subparsers.add_parser("get", help="manipulate ws/pkg evn: create uid with name uid_name")
     sp.set_defaults(cmd="get");
     sp.add_argument('Name', type=str, nargs="+", help='variable Name')
-    sp.add_argument('-t','--type',default='',help="Store name=value of a specific type (types does not colide)")
+    sp.add_argument('-t','--type',default=DEFAULT_NAME_TYPE,help="Store name=value of a specific type (types does not colide)")
     
     sp= subparsers.add_parser("set", help="manipulate ws/pkg evn: add new entry to uid with name uid_name")
     sp.set_defaults(cmd="set");
     sp.add_argument('Name', type=str, nargs="+", help='variable Name')
-    sp.add_argument('-t','--type',default='',help="Store name=value of a specific type (types does not colide)")
+    sp.add_argument('-t','--type',default=DEFAULT_NAME_TYPE,help="Store name=value of a specific type (types does not colide)")
     sp.add_argument('-a','--append', action='store_true', default=False, help="Append current value to existing one")
     sp.add_argument('-s','--separator', default=' ', help="only used with append flag, sets the separator when appending. default 'space' ")
 
     sp= subparsers.add_parser("list", help="Print all values")
     sp.set_defaults(cmd="list");
-    sp.add_argument('-t','--type', default='', help="lists name=value of a specific type")
+    sp.add_argument('-t','--type', default=DEFAULT_NAME_TYPE, help="lists name=value of a specific type")
     sp.add_argument('-a','--all', action='store_true', default=False, help="lists name=value for all types")
     sp.add_argument('-d','--decorate', action='store_true', default=False, help="always decorate for terminal")
     sp.add_argument('-n','--name-only', action='store_true', default=False, help="show only names")
@@ -72,52 +79,55 @@ def main():
     args= parser.parse_args()
     #print args
     cfg.args= args
-    db= get_db()
+    read_config()
     if args.cmd == 'set':
         for n in args.Name:
-            n=n.split('=')
+            n=n.split('=',1)
             n[0]=n[0].strip()
             name= n[0]
             if len(n) > 1:
                 value= n[1]
             else:
                 value= ''
-            cur=db.select("select value from vars where name=? and type=?;", (name,args.type))
             
             if len(value) == 0:
-                db.run("delete from vars where name = ? and type = ?;", (name, args.type))
+                if args.type in cfg.config:
+                    if name in cfg.config[args.type]:
+                        del cfg.config[args.type][name]
+                        save_config()
             else:
-                if len(cur):
+                # create the type dict is does not exist
+                if args.type not in cfg.config:
+                    cfg.config[args.type] = {}
+                if name in cfg.config[args.type]:
+                    # value exists just update
                     if cfg.args.append:
-                        value= cur[0][0]+cfg.args.separator+value
-                    db.run("update vars set value=? where name = ? and type = ?;", (value, name, args.type))
-                else:
-                    db.run("insert into vars (name, value, type) values (?,?,?);", (name, value, args.type))
+                        # if is append operation construct
+                        value = cfg.config[args.type][name]+cfg.args.separator+value
+                #save the value
+                cfg.config[args.type][name] = value
+                save_config()
+                    
     elif args.cmd == 'get':
         for n in args.Name:
             name= n.strip()
-            cur=db.select("select value from vars where name=? and type=?;", (name,args.type))
-            if len(cur):
-                print cur[0][0]
+            if args.type in cfg.config:
+                if name in cfg.config[args.type]:
+                    print cfg.config[args.type][name]
     elif args.cmd == 'list':
         if args.all:
-            cur=db.select("select name,value,type from vars order by type asc;")
-            t=''
-            if len(cur):
-                for r in cur:
-                    if t != r[2]:
-                        print "%s:" % (r[2],)
-                        t= r[2]
-                    print_one(cfg,r)
+            for type_name, tip in cfg.config.iteritems():
+                if type_name != DEFAULT_NAME_TYPE:
+                    print "%s:" % (type_name,)
+                for name,value in tip.iteritems():
+                    print_one(cfg,name, value)
                 
         
         else:
-            cur=db.select("select name,value from vars where type=?;", (args.type,))
-            if len(cur):
-                for r in cur:
-                    print_one(cfg, r)
+            if args.type in cfg.config:
+                for name,value in cfg.config[args.type].iteritems():
+                    print_one(cfg,name, value)
     elif args.cmd == 'drop':
-        db.disconnect()
         os.remove(cfg.dbPath)
         
             
