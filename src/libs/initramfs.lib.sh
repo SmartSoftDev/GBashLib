@@ -1,10 +1,15 @@
+. $(gbl gzip)
 
 function irfs_extract(){
 
 	local F=$1 #initramfs file
 	local where=$2
 	cp "$F" ifs.gz
-	gunzip ifs.gz
+	if is_file_gzipped ifs.gz ; then	
+		gunzip ifs.gz
+	else
+		mv ifs.gz ifs
+	fi
 	mkdir -p $where
 	cd $where
 	rm -rf *
