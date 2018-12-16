@@ -31,7 +31,6 @@ def save_config():
 
 def print_one(cfg, name, value, last=False):
     args= cfg.args
-    s= name
     if sys.stdout.isatty() or args.decorate:
         s = "%s%s%s" %(COLOR_CYAN, name, COLOR_NONE,)
         if args.value_only:
@@ -39,8 +38,9 @@ def print_one(cfg, name, value, last=False):
         elif not args.name_only:
             s += " = %s%s%s" %(COLOR_GREEN, value, COLOR_NONE)
     else:
+        s= name
         if args.value_only:
-            s = name
+            s = value
         elif not args.name_only:
             s += "=" + value
     if last:
