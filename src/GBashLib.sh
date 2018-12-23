@@ -1,6 +1,5 @@
 #gbl_usage_function
 _NAME=$(basename $0)
-_START_PWD=`pwd`
 
 _gbl_usage(){
 	cat <<EOM
