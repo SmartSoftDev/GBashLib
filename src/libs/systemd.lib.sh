@@ -15,7 +15,7 @@ function systemd_create_or_update_from_tpl(){
     fi
     log "generate $sysd_file"
     local v_cmd="-v"
-    if [ "x$@" == "x" ] ; then v_cmd="" ; fi
+    if [ "$#" -eq 0 ] ; then v_cmd="" ; fi
 
     sudo tpl -i $tpl_file_path \
             -o $sysd_file \
