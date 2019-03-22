@@ -1,7 +1,19 @@
 #!/bin/bash
-d_file=$HOME/d.bl.sh
-if [ -f $d_file ] ; then
-	source $d_file
+DST=$HOME/d.bl.sh
+# if d.bl.sh is a directory ilclude all *.bl.sh files from there
+if [ -d $DST ] ; then
+	for i in $DST/*.bl.sh
+	do
+		if [ -f $i ] ; then
+			source $i
+		fi
+	done
+else
+	if [ -f $DST ] ; then
+		source $DST
+	else 
+	 echo -e "THERE ARE NO R COMMANDS FOUND!\n!!!\n!!!"
+	fi
 fi
 
 #run G_BASH_LIB
