@@ -8,6 +8,7 @@ if [ "$1" != "_print_autocomplete" ] ; then
 		echo "there is no ./d.bl.sh to run in this directory"
 		exit 1
 	fi
+	D_BL_SH_DIR=$(pwd)
 	source ./d.bl.sh
 fi
 #run G_BASH_LIB

@@ -1,4 +1,5 @@
 . $(gbl input)
+. $(gbl log)
 
 function add_j(){
 	v set -t path $1
@@ -9,12 +10,6 @@ function add_git(){
 }
 function add_svn(){
 	v set -t svn $1
-}
-
-
-function fatal (){
-	echo "!!! FATAL: $@"
-	exit 1
 }
 
 function check_path(){

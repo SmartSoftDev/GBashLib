@@ -1,6 +1,5 @@
 #gbl_usage_function
 _NAME=$(basename $0)
-_START_PWD=`pwd`
 
 _gbl_usage(){
 	cat <<EOM
@@ -42,8 +41,6 @@ EOM
 	echo "$G_USAGE_SFX"
 }
 
-#G functions
- 
 #gbl_loging
 gbl_descr_fatal='print a fatal error and then exit 1'
 gbl_fatal(){
@@ -58,113 +55,6 @@ gbl_log(){
 gbl_descr_err='print a ERROR message'
 gbl_err(){
 	echo -e "ERROR:\t $@" 1>&2
-}
-gbl_descr_wrn='print a warning message' 
-gbl_wrn(){
-	echo -e "WARN:\t $@"
-}
-gbl_descr_exec='execute a command and checks if result is ok'
-gbl_exec(){
-	echo -n "EXEC: $@"
-	echo "";
-	local EXE=$1;
-	shift
-	$EXE $@
-	local RET=$?
-	[ "$RET" != "0" ] && echo "EXEC-FAILED!!! ret=$RET"
-	return $RET
-	
-}
-
-#G filesystem helpers
-gbl_descr_test_files='test multiple files if they exist'
-gbl_test_files(){
-	FRET=0
-	for fx in "$@" ; do 
-		if [ ! -f $fx ] ; then
-			gbl_log "file $fx is missing!"
-			FRET=127
-		fi 
-	done
-		
-	return $FRET
-}
-gbl_descr_test_dirs='test multiple directory if they exist'
-gbl_test_dirs(){
-	FRET=0
-	for fx in "$@" ; do 
-		if [ ! -d $fx ] ; then
-			gbl_log "directory $fx is missing!"
-			FRET=127
-		fi 
-	done
-		
-	return $FRET
-}
-gbl_descr_rm_dir='rm dir like rm -rf but before delete it checks if the given dir is not root dir! '
-gbl_rm_dir(){
-	[ -z "$1" ] && gbl_fatal "gbl_rm_dir: directory is empty!"
-	local DIR=$1
-	local REAL_DIR=$(cd "$DIR" ; pwd )
-	echo "gbl_rm_dir=$DIR real_dir= $REAL_DIR"
-	[ "$REAL_DIR" == "/" ] && gbl_fatal "Don't try to remove root directory! It hurts! dangerous path='$DIR'"
-	rm -rf $DIR
-}
-gbl_descr_absolute='echo absolute path for $1 argument'
-gbl_absolute(){
-	local DIR=`dirname $1`
-	local FILE=`basename $1`
-	local REAL_DIR=$(cd "$DIR" ; pwd )
-	#echo "dir=$DIR real_dir=$REAL_DIR file=$FILE"
-	echo "$REAL_DIR/$FILE"
-}
-gbl_descr_tpl_parse='parse a tpl file and write results in destination. 2 arrays must be prefilled 	TPL_NAMES=("") TPL_VALUES=(""). args: TPL_SRC DST_FILE'
-gbl_tpl_parse(){
-	#$1 template file
-	#$2 destination file
-	gbl_test_files $1 || { gbl_err "template file '$1' does not exist!"; return 127; } 
-	
-	local awk_cmd="{";
-	for (( i=0; i<${#TPL_NAMES[@]}; i++ ));
-	do
-		awk_cmd+='gsub(/'${TPL_NAMES[$i]}'/,"'${TPL_VALUES[$i]}'");'
-	done
-	awk_cmd+="print}"
-	gbl_log "awk_cmd=$awk_cmd"
-	awk "$awk_cmd" $1 > $2
-}
-
-
-gbl_descr_wait_for_host='send a ping once per second and wait for it to succeed. args: HOST timeout(sec)'
-gbl_wait_for_host(){
-	[ -z "$1" ] && gbl_fatal "wait_for_host: host is empty"
-	[ -z "$2" ] && gbl_fatal "wait_for_host: timeout is empty"
-	gbl_log "waiting for host: $1 for $2 seconds"
-	local seconds=0
-	while true
-	do
-		let seconds++
-		printf "."
-		ping -c 1 -w 1 $1 >/dev/null 2>&1
-		local ret=$?
-		[ "$ret" == 0 ] && break
-		[ "$ret" == 2 ] && { echo "" ; gbl_fatal "waiting for host: bad host check 'ping $1' because it does not work" ; }
-		[ "$seconds" == "$2" ] &&  { echo "" ; gbl_fatal "host='$1' did not came UP after $2 seconds" ; } 
-	done 
-	gbl_log "\nhost='$1' is UP after $seconds seconds"
-}
-
-deprecated_gbl_ftp_get_recend_modified_object(){
-	[ -z "$1" ] && gbl_fatal "please provide ftp url!"
-	curl $1 2>/dev/null | awk '{print $NF}' | sort -n | tail -1 
-}
-gbl_ftp_get_entries(){
-	[ -z "$1" ] && gbl_fatal "please provide ftp url!"
-	curl $1 2>/dev/null | awk '{print $NF}'
-}
-
-gbl_delete_lines_between_two_patterns(){
-	sed '/G_BASH_LIB/,/G_BASH_LIB_END/d' file.cfg
 }
 
 #G special commands (build-in commands)
