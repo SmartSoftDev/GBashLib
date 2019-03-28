@@ -144,6 +144,7 @@ _gbl_my_ssh(){
 			return 1
 		else
 			echo "$alias -> $ip"
+			alias="$ip"
 			ip=$(v get -t ssh $ip )
 		fi
 	}
