@@ -32,12 +32,12 @@ def read_config():
         save_config()
     else:
         with open(cfg.dbPath) as f:
-            cfg.config = yaml.load(f)
+            cfg.config = yaml.load(f, Loader=yaml.FullLoader)
     
     #read imported files into description
     for fpath in cfg.config[C.keys.cfgImport]:
         with open(fpath) as f:
-            cfg.description.update(yaml.load(f))
+            cfg.description.update(yaml.load(f, Loader=yaml.FullLoader))
     
 def save_description():
     raise Exception("Not implemented")
