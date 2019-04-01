@@ -22,7 +22,7 @@ def read_config():
         save_config()
     else:
         with open(cfg.dbPath) as f:
-            cfg.config = yaml.load(f)
+            cfg.config = yaml.load(f, Loader=yaml.FullLoader)
     
 def save_config():
     with open(cfg.dbPath, "w") as f:
