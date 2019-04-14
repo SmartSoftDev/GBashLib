@@ -168,8 +168,8 @@ def cmd_get():
     elif len(cur_word) == 0:
         #give all options and all subcommands
         for o in p['options']:
-            ret.append('-'+o['short'])
-            ret.append('--'+o['long'])
+            ret.append('-' + o['short'])
+            ret.append('--' + o['long'])
         ret+= p['subcommands']
     else:
         #it is a subcommand
