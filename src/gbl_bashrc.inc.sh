@@ -45,7 +45,7 @@ _gbl_my_jump(){
 		fi
 	}
 	echo -e "\tjump to $COLOR_GREEN $location $COLOR_NONE"
-	cd $location
+	cd "$location"
 }
 
 _gbl_bac_jump_alias(){
