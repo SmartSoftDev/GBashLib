@@ -73,9 +73,15 @@ def main():
     sp.add_argument('-n','--name-only', action='store_true', default=False, help="show only names")
     sp.add_argument('-v','--value-only', action='store_true', default=False, help="show only values")
     sp.add_argument('-s','--separator', default='\n', help="set separator string ")
+
+    sp= subparsers.add_parser("del", help="delete one entry")
+    sp.add_argument('Name', type=str, nargs="+", help='variable Name')
+    sp.add_argument('-t','--type', default=DEFAULT_NAME_TYPE, help="delete entry from specific type")
+    sp.set_defaults(cmd="del");
+
     sp= subparsers.add_parser("drop", help="Delete hole DB")
     sp.set_defaults(cmd="drop");
-    
+
     args= parser.parse_args()
     #print args
     cfg.args= args
@@ -129,7 +135,17 @@ def main():
                     print_one(cfg,name, value)
     elif args.cmd == 'drop':
         os.remove(cfg.dbPath)
-        
+    elif args.cmd == 'del':
+        for n in args.Name:
+            name = n.strip()
+            if args.type in cfg.config:
+                if name in cfg.config[args.type]:
+                    del cfg.config[args.type][name]
+                    if len(cfg.config[args.type]) == 0:
+                        # delete the type dict
+                        del cfg.config[args.type]
+        save_config()
+
             
                 
 if __name__ == "__main__":

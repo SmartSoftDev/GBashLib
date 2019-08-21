@@ -15,25 +15,32 @@ _gbl_my_jump(){
 	;;
 	"set")
 		local p=$3
-		[ "$3" == "." ] && p=$(pwd)
+		[[ "$3" == "." ]] && p=$(pwd)
 		v set -t path "$2=$p"
 		return 0;
 	;;
+	"del")
+	    v del -t path $2
+	    return 0
+    ;;
 	"list")
 		v list -dt path | column -t -n
 		return 0
 	;;
 	esac
 	
-	[  -z "$1" ] && {
-		echo -e "usage to jump: $COLOR_GREEN j J_ALIAS$COLOR_NONE\nusage to set: $COLOR_GREEN j set J_ALIAS PATH$COLOR_NONE\nusage to list: $COLOR_GREEN j$COLOR_NONE or $COLOR_GREEN j list$COLOR_NONE "
+	[[  -z "$1" ]] && {
+		echo -e "usage to jump: $COLOR_GREEN j J_ALIAS$COLOR_NONE\n\
+usage to set: $COLOR_GREEN j set J_ALIAS PATH$COLOR_NONE\n\
+usage to del: $COLOR_GREEN j del J_ALIAS $COLOR_NONE\n\
+usage to list: $COLOR_GREEN j$COLOR_NONE or $COLOR_GREEN j list$COLOR_NONE "
 		v list -dt path | column -t -n
 		return 0
 	}
 	local location=$(v get -t path $1 )
-	[ "$location" == "" ] && {
+	[[ "$location" == "" ]] && {
 		location=($(v list -t path -n  | grep "$1"))
-		if [ ${#location[@]} == 0 ] ; then 
+		if [[ ${#location[@]} == 0 ]] ; then
 			echo -e "location is $COLOR_RED NOT-SET $COLOR_NONE use '$COLOR_GREEN j set $1 PATH$COLOR_NONE'"
 			return 1
 	elif [ ${#location[@]} -gt 1 ] ; then
@@ -74,9 +81,10 @@ alias j="_gbl_my_jump"
 
 # 's' ssh shortcut !
 _gbl_my_ssh_usage(){
-	echo -e "usage to ssh: $COLOR_GREEN s SSH_ALIAS$COLOR_NONE"
-	echo -e "usage to set: $COLOR_GREEN s set SSH_ALIAS IP$COLOR_NONE"
-	echo -e "usage to list: $COLOR_GREEN s$COLOR_NONE or $COLOR_GREEN s list$COLOR_NONE "
+	echo -e "usage to ssh: $COLOR_GREEN s SSH_ALIAS$COLOR_NONE\n\
+usage to set: $COLOR_GREEN s set SSH_ALIAS IP$COLOR_NONE\n\
+usage to del: $COLOR_GREEN s del SSH_ALIAS $COLOR_NONE\n\
+usage to list: $COLOR_GREEN s$COLOR_NONE or $COLOR_GREEN s list$COLOR_NONE "
 	
 	v list -dt ssh | column -t -n
 }
@@ -88,6 +96,11 @@ _gbl_my_ssh(){
 	"get")
 		v get -t ssh $2
 		return 0;
+	;;
+	"del")
+	    shift
+	    v del -t ssh $@
+	    return 0
 	;;
 	"set")
 		local alias=$2
