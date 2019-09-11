@@ -8,12 +8,14 @@ if [ -d $DST ] ; then
 			source $i
 		fi
 	done
+elif [ -f $DST ] ; then
+	source $DST
 else
-	if [ -f $DST ] ; then
-		source $DST
-	else 
-	 echo -e "THERE ARE NO R COMMANDS FOUND!\n!!!\n!!!"
+	if [ "$1" == "_print_autocomplete" ] ; then
+		#no autocomplete results 
+		exit 0
 	fi
+	echo -e "THERE IS NO R COMMANDS FOUND!\n"
 fi
 
 #run G_BASH_LIB
