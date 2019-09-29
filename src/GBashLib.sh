@@ -207,11 +207,16 @@ do
 		CMD_ARGS[i]=$1
 		shift
 	done
+
 	type gblcmd_$CMD >/dev/null 2>&1 || {
 		#check for prefix commands
 		all_cmds=( ${_ALLCMDS[@]} )
 		detect=( )
-		for i in ${all_cmds[@]} ; do if [[ "$i" =~ "$CMD" ]] ; then detect=( ${detect[@]} $i) ; fi ; done ;
+		for i in ${all_cmds[@]} ; do 
+			if [[ "$i" =~ "$CMD" ]] ; then 
+				detect=( ${detect[@]} $i) ; 
+			fi 
+		done
 		if [ ${#detect[@]} -gt 0 ] ; then
 			if [ ${#detect[@]} -gt 1 ] ; then
 				gbl_fatal "ambigous command '$CMD' -> ( ${detect[@]} )"
@@ -222,7 +227,7 @@ do
 		else
 			gbl_err "command '$CMD' is not found!\n"; _gbl_usage ; exit 127 ;
 		fi
-		}
+	}
 	#echo -e "\tcommand: '$CMD' with args '${CMD_ARGS[@]}'"
 	gblcmd_$CMD ${CMD_ARGS[@]}
 	CMD_RUN_COUNT=1

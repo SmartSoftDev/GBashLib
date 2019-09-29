@@ -57,6 +57,7 @@ def main():
     sp.set_defaults(cmd="get");
     sp.add_argument('Name', type=str, nargs="+", help='variable Name')
     sp.add_argument('-t','--type',default=DEFAULT_NAME_TYPE,help="Store name=value of a specific type (types does not colide)")
+    sp.add_argument('-s', '--search', default=False, action='store_true', help="Search the text in the name")
     
     sp= subparsers.add_parser("set", help="manipulate ws/pkg evn: add new entry to uid with name uid_name")
     sp.set_defaults(cmd="set");
@@ -120,6 +121,11 @@ def main():
             if args.type in cfg.config:
                 if name in cfg.config[args.type]:
                     print cfg.config[args.type][name]
+                else:
+                    if args.search:
+                        for n, v in cfg.config[args.type].iteritems():
+                            if name in n:
+                                print v
     elif args.cmd == 'list':
         if args.all:
             for type_name, tip in cfg.config.iteritems():

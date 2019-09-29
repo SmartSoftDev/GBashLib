@@ -11,7 +11,7 @@ function systemd_create_or_update_from_tpl(){
     local sysd_file=/lib/systemd/system/$service_file
     if [ -f $sysd_file ];then
         log "stop $service_file"
-        sudo systemctl stop $service_file
+        sudo systemctl stop $service_file || log "could not stop the service"
     fi
     log "generate $sysd_file"
     local v_cmd="-v"
@@ -23,4 +23,5 @@ function systemd_create_or_update_from_tpl(){
     sudo systemctl daemon-reload
     sudo systemctl enable $service_file
     sudo systemctl start $service_file
+    v set -t systemd $service_name=$service_file
 }
