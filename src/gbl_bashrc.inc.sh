@@ -262,7 +262,7 @@ function sd(){
 		if [ "$service" != "" ] ; then
 			echo "Ambiguous service for '$2' :"
 			for s in $(v get -t systemd -s $2) ; do
-				echo "\t$2 -> $s"
+				echo -e "\t$2 -> $s"
 			done
 			return
 		fi
