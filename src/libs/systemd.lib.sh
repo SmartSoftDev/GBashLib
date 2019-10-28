@@ -25,3 +25,17 @@ function systemd_create_or_update_from_tpl(){
     sudo systemctl start $service_file
     v set -t systemd $service_name=$service_file
 }
+
+function systemd_uninstall_service(){
+    local service_name="$1"
+    local service_file=${service_name}.service
+    local sysd_file=/lib/systemd/system/$service_file
+    if [ -f $sysd_file ];then
+        log "stop $service_file"
+        sudo systemctl stop $service_file || log "could not stop the service"
+        sudo systemctl disable $service_file || log "could not disable the service"
+    fi
+    sudo rm -f $sysd_file
+    sudo systemctl daemon-reload
+    v del -t systemd $service_name=$service_file
+}
