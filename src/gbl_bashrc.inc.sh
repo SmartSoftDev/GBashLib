@@ -4,6 +4,7 @@ export G_BASH_LIB=$(dirname ${BASH_SOURCE[0]})
 . $(gbl log)
 eval "$(r _print_autocomplete r)"
 eval "$(d _print_autocomplete d)"
+alias ll="ls -alFh"
 
 # 'j' jump Shortcut
 _gbl_my_jump(){
