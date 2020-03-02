@@ -1,6 +1,8 @@
+. $(gbl log)
 function _togle_touchpad(){
     local cmd="$1" #shold be enable or disable
     local touchpad_id=$(xinput list --id-only "$(v get -t config TOUCHPAD_NAME)")
+    [ "$touchpad_id" == "" ] && fatal "touchbad not set: v set -t config TOUCHPAD_NAME=?"
     echo "xinput $cmd $touchpad_id"
     xinput $cmd $touchpad_id
 }
