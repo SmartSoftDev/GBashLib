@@ -3,7 +3,7 @@
 function _set_brigtness(){
     local value="$1"
     local output="$(v get -t config MONITOR_OUTPUT)"
-    [ "x$output" == "x" ] && fatal "please set the v set -t config MONITOR_OUTPUT=?     "
+    [ "x$output" == "x" ] && fatal "please set the v set -t config MONITOR_OUTPUT=?"
     echo "xrandr --output $output --brightness $value"
     xrandr --output $output --brightness $value
 
