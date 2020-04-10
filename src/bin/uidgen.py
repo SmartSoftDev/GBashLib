@@ -35,7 +35,7 @@ def hashfile(afile, hasher, blocksize=65536):
 
 def main(args):
     
-    global cfg;
+    global cfg
     parser= argparse.ArgumentParser(description="Uid generation based on file/string fingerprint")
     parser.add_argument('uid_name', type=str, nargs=1,
                         help='UID identifier')
