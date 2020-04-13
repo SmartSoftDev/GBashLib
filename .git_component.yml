@@ -1,0 +1,7 @@
+locations:
+  - .
+name: GBashLib
+install-scripts:
+  - src/scripts/install.sh
+update-scripts:
+  - src/scripts/install.sh
