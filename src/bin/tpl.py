@@ -45,7 +45,7 @@ def main():
     cfg.vars = dict()
     if cfg.args.vars:
         for v in cfg.args.vars:
-            v = v.split('=')
+            v = v.split('=', 1)
             name = v[0].strip()
             value = ''
             if len(v) > 1:
