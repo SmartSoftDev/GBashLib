@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 import os
 import argparse
 import sys
@@ -7,7 +7,7 @@ cfg = lambda: None
 
 
 def process_line(fi_line):
-    for n, v in cfg.vars.iteritems():
+    for n, v in cfg.vars.items():
         fi_line = fi_line.replace(n, v)
     # print "out:"+l
     cfg.fo.write(fi_line)
@@ -61,7 +61,7 @@ def main():
             cfg.fo_replPath = cfg.args.output
             cfg.fo = open(cfg.foPath, "w")
             if os.path.exists(cfg.fo_replPath):
-                cfg.fo_repl = open(cfg.fo_replPath, "rb")
+                cfg.fo_repl = open(cfg.fo_replPath, "r")
             else:
                 cfg.fo_repl = None
         else:
@@ -70,7 +70,7 @@ def main():
     if not cfg.args.input:
         cfg.fi = sys.stdin
     else:
-        cfg.fi = open(cfg.args.input, "rb")
+        cfg.fi = open(cfg.args.input, "r")
     # read the input file (tempalte)
     count = 0
     repl_id = ''

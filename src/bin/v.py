@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 import os
 import argparse
 import sys
@@ -120,24 +120,24 @@ def main():
             name= n.strip()
             if args.type in cfg.config:
                 if name in cfg.config[args.type]:
-                    print cfg.config[args.type][name]
+                    print(cfg.config[args.type][name])
                 else:
                     if args.search:
-                        for n, v in cfg.config[args.type].iteritems():
+                        for n, v in cfg.config[args.type].items():
                             if name in n:
-                                print v
+                                print(v)
     elif args.cmd == 'list':
         if args.all:
-            for type_name, tip in cfg.config.iteritems():
+            for type_name, tip in cfg.config.items():
                 if type_name != DEFAULT_NAME_TYPE:
-                    print "%s:" % (type_name,)
-                for name,value in tip.iteritems():
+                    print("%s:" % (type_name,))
+                for name,value in tip.items():
                     print_one(cfg,name, value)
                 
         
         else:
             if args.type in cfg.config:
-                for name,value in cfg.config[args.type].iteritems():
+                for name,value in cfg.config[args.type].items():
                     print_one(cfg,name, value)
     elif args.cmd == 'drop':
         os.remove(cfg.dbPath)

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 '''
 Auto complete helper.
 TODO: 
@@ -89,9 +89,9 @@ def process_print_cmd():
     table = []
     if cmd == 'print':
         headers = ('name', 'commands', 'options', 'subcommands')
-        for k,v in cfg.description.iteritems():
+        for k,v in cfg.description.items():
             table.append((k,'','',''))
-            for path, p_val in v.iteritems():
+            for path, p_val in v.items():
                 options=[]
                 for o in p_val['options']:
                     options.append(print_option(o))
@@ -99,7 +99,7 @@ def process_print_cmd():
                 if 'subcommands' in p_val:
                     subcommands= ",".join(p_val['subcommands'])
                 table.append(('',path, ",".join(options), subcommands ))
-        print tabulate(table, headers=headers), 
+        print(tabulate(table, headers=headers), )
 
 def get_path_from_args(args):
     path=[]
@@ -176,7 +176,7 @@ def cmd_get():
         for s in p['subcommands']:
             if s.startswith(cur_word):
                 ret.append(s)
-    print ' '.join(ret)
+    print(' '.join(ret))
 
 def cmd_import():
     expected_file_name= ".autocomplete.yaml"
@@ -191,9 +191,9 @@ def cmd_import():
     for fpath in found_files:
         fpath= os.path.abspath(fpath)
         if fpath in cfg.config[C.keys.cfgImport]:
-            print "This file is already imported %r" % fpath
+            print("This file is already imported %r" % fpath)
             continue
-        print "add import %r" % fpath
+        print("add import %r" % fpath)
         cfg.config[C.keys.cfgImport].append(fpath)
     save_config()
     
@@ -213,7 +213,7 @@ def main():
     elif cmd == 'import':
         cmd_import()
     elif cmd == '_list':
-        print ' '.join(cfg.description.iterkeys())
+        print(' '.join(cfg.description.keys()))
     elif cmd == '_get':
         cmd_get()
         
