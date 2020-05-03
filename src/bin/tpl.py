@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-import os
 import argparse
+import os
 import sys
 
 cfg = lambda: None
@@ -19,7 +19,7 @@ def read_from_fo_replace(until_l):
     while True:
         l = cfg.fo_repl.readline()
         if not l:
-            break;
+            break
         # print "read: "+l
         if until_l:
             if l == until_l:
