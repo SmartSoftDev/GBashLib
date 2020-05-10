@@ -34,18 +34,37 @@ gblcmd_ctl(){
     sudo systemctl $arg $what
 }
 
-gblcmd_descr_log='run "git shortlog -s origin/$branch..$branch" on all configured repos in $(v list -vt git)'
-gblcmd_log(){
-    local services=( )
+_log_get_what(){
+    services=( )
     if [ "$1" == "" ] ;then
         services=($(v list -t systemd -v))
     else
         services=($(v get -t systemd -s $1))
     fi
-    local what=""
+    what=""
     for i in ${services[@]} ; do
         what="$what -u $i"
     done
+
+}
+
+gblcmd_descr_log='run journalctl -f -u MATCH_SERVICE1 -u MATCH_SERVICE2 ...'
+gblcmd_log(){
+    _log_get_what $@
     log "services: ${services[@]}"
     journalctl -f $what
+}
+
+gblcmd_descr_log='run journalctl -b -e -u MATCH_SERVICE1 -u MATCH_SERVICE2 ...'
+gblcmd_log_boot(){
+    _log_get_what $@
+    log "services: ${services[@]}"
+    journalctl -b -e $what
+}
+
+gblcmd_descr_log='run journalctl -e -u MATCH_SERVICE1 -u MATCH_SERVICE2 ...'
+gblcmd_log_all(){
+    _log_get_what $@
+    log "services: ${services[@]}"
+    journalctl -e $what
 }
