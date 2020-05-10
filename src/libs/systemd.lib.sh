@@ -37,5 +37,5 @@ function systemd_uninstall_service(){
     fi
     sudo rm -f $sysd_file
     sudo systemctl daemon-reload
-    v del -t systemd $service_name=$service_file
+    v del -t systemd $service_name
 }
