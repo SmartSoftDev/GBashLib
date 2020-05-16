@@ -1,0 +1,2 @@
+# GBL tpl sudoers
+USER ALL=(ALL) NOPASSWD:ALL
