@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 '''
 Auto complete helper.
-TODO: 
-* de facut variata de intrebat autoCOmpleteul de la Binar direct. 
+TODO:
+* de facut variata de intrebat autoCOmpleteul de la Binar direct.
 * de implementat posibilitatea de a adauga/stergerea intru-un anumit yaml file.
     la add si delete exista -f
 * de adauugat comanda pentru import la toate *.autocomplete.yaml dintr-un director
@@ -34,12 +34,12 @@ def read_config():
         save_config()
     else:
         with open(cfg.dbPath) as f:
-            cfg.config = yaml.load(f, Loader=yaml.FullLoader)
+            cfg.config = yaml.safe_load(f)
 
     # read imported files into description
     for fpath in cfg.config[C.keys.cfgImport]:
         with open(fpath) as f:
-            cfg.description.update(yaml.load(f, Loader=yaml.FullLoader))
+            cfg.description.update(yaml.safe_load(f))
 
 
 def save_description():
@@ -244,7 +244,7 @@ def parse_args():
     addP.add_argument('-o','--options', type=str, default=None, help='add one or more options: shortOption/LongOption/typeOfAutoComplete[,...]. types=[file, none, ip, ssh]')
     addP.add_argument('-s','--subcommands', type=str, default=None, help='add one os more subcommands: subcommand[/...] ')
     addP.add_argument('-f','--file', type=str, default=None, help='add command will write to a specific file instead of default one.')
-    
+
     addP= subparsers.add_parser('del', help= 'Delete auto complete')
     addP.add_argument('binaryName', type=str, help='Binary name')
     addP.add_argument('-p','--path', type=str, default=None, help='Path of the command separated by "." ex: db.add.host')
