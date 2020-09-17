@@ -19,7 +19,7 @@ def read_from_fo_replace(until_l):
     while True:
         l = cfg.fo_repl.readline()
         if not l:
-            break;
+            break
         # print "read: "+l
         if until_l:
             if l == until_l:
@@ -34,7 +34,7 @@ def skip_from_fo_replace(until_l):
     while True:
         l = cfg.fo_repl.readline()
         if not l:
-            break;
+            break
         # print "skip: "+l
         if l == until_l:
             break
@@ -71,7 +71,7 @@ def main():
         cfg.fi = sys.stdin
     else:
         cfg.fi = open(cfg.args.input, "rb")
-    # read the input file (tempalte)
+    # read the input file (template)
     count = 0
     repl_id = ''
     while True:
@@ -109,15 +109,14 @@ if __name__ == "__main__":
     sp = argparse.ArgumentParser(description="Render a template with variables")
 
     sp.add_argument('-o', '--output', default=None, help="Output file. Default is stdout.")
-    sp.add_argument('-i', '--input', help="Template file. If not presetn stdin will be used")
+    sp.add_argument('-i', '--input', help="Template file. If not present stdin will be used")
     sp.add_argument('-r', '--replace', action='store_true', default=False,
                     help="replace content from file between match-start and match-end ")
     sp.add_argument('-d', '--delete', action='store_true', default=False,
                     help="delete content from file between match-start and match-end ")
 
     sp.add_argument('-v', '--vars', type=str, nargs="+", help='Variables to be replaces inside tpl. NAME=VALUE')
-    sp.add_argument('-I', '--id', default=None, type=str, help="Element id to be replaced. used in conbination with -r")
+    sp.add_argument('-I', '--id', default=None, type=str, help="Element id to be replaced. used in combination with -r")
 
     cfg.args = sp.parse_args()
-    # print cfg.args
     main()

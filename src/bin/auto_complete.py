@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-'''
+"""
 Auto complete helper.
 TODO: 
 * de facut variata de intrebat autoCOmpleteul de la Binar direct. 
@@ -8,21 +8,22 @@ TODO:
 * de adauugat comanda pentru import la toate *.autocomplete.yaml dintr-un director
     comanda import
 * de implementat optiuni de tip FILE si de tip ENUM
-'''
+"""
 import argparse
 import yaml
 from tabulate import tabulate
 import os
 
-C= lambda: None
+C = lambda: None
 C.keys= lambda: None
-C.keys.cfgImport='import'
-cfg= lambda: None
-cfg.path= os.environ['HOME']
-cfg.dbPath=os.path.join(cfg.path, ".auto_complete.yaml")
+C.keys.cfgImport ='import'
+cfg = lambda: None
+cfg.path = os.environ['HOME']
+cfg.dbPath = os.path.join(cfg.path, ".auto_complete.yaml")
 
-cfg.config={C.keys.cfgImport:[]} #import is mandatory key
-cfg.description={} #default nothing
+cfg.config = {C.keys.cfgImport:[]} #import is mandatory key
+cfg.description = {} #default nothing
+
 
 def read_config():
     if not os.path.exists(cfg.path):
@@ -38,13 +39,16 @@ def read_config():
     for fpath in cfg.config[C.keys.cfgImport]:
         with open(fpath) as f:
             cfg.description.update(yaml.load(f))
-    
+
+
 def save_description():
     raise Exception("Not implemented")
+
 
 def save_config():
     with open(cfg.dbPath, "w") as f:
         yaml.dump(cfg.config, f)
+
 
 def cmd_add():
     bin= cfg.args.binaryName
@@ -66,7 +70,8 @@ def cmd_add():
     b= cfg.description[bin]
     b[path]={"options":options, "subcommands":subcommands}
     save_description()
-    
+
+
 def cmd_del():
     bin= cfg.args.binaryName
     if bin not in cfg.description:
@@ -81,8 +86,10 @@ def cmd_del():
         del cfg.description[bin]
     save_description()
 
+
 def print_option(opt):
     return "{}/{}/{}".format(opt['short'],opt['long'], opt['type'] if opt['type'] else "")
+
 
 def process_print_cmd():
     cmd= cfg.args.cmd
@@ -99,7 +106,7 @@ def process_print_cmd():
                 if 'subcommands' in p_val:
                     subcommands= ",".join(p_val['subcommands'])
                 table.append(('',path, ",".join(options), subcommands ))
-        print tabulate(table, headers=headers), 
+        print(tabulate(table, headers=headers))
 
 def get_path_from_args(args):
     path=[]
@@ -176,7 +183,7 @@ def cmd_get():
         for s in p['subcommands']:
             if s.startswith(cur_word):
                 ret.append(s)
-    print ' '.join(ret)
+    print(' '.join(ret))
 
 def cmd_import():
     expected_file_name= ".autocomplete.yaml"
@@ -191,9 +198,9 @@ def cmd_import():
     for fpath in found_files:
         fpath= os.path.abspath(fpath)
         if fpath in cfg.config[C.keys.cfgImport]:
-            print "This file is already imported %r" % fpath
+            print("This file is already imported %r" % fpath)
             continue
-        print "add import %r" % fpath
+        print("add import %r" % fpath)
         cfg.config[C.keys.cfgImport].append(fpath)
     save_config()
     
@@ -213,7 +220,7 @@ def main():
     elif cmd == 'import':
         cmd_import()
     elif cmd == '_list':
-        print ' '.join(cfg.description.iterkeys())
+        print(' '.join(cfg.description.iterkeys()))
     elif cmd == '_get':
         cmd_get()
         
