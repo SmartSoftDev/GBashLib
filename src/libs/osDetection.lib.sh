@@ -14,11 +14,21 @@ function __processOsDetection(){
 function osDetection(){
 	[ "$OSID" != "" ] && [ "$OSNAME" != "" ] && return 0
 	if [ -f /etc/lsb-release ] ; then
+		# for ubuntu
 		OSNAME=$(. /etc/lsb-release; echo $DISTRIB_ID)
 		OSVERSION=$(. /etc/lsb-release; echo $DISTRIB_RELEASE)
 		OSDESCRIPTION=$(. /etc/lsb-release; echo $DISTRIB_DESCRIPTION)
 		__processOsDetection
 		return 0
+	elif [ -f /etc/os-release ] ; then
+		# for rapsbian 10
+		OSNAME=$(. /etc/os-release; echo $ID)
+		OSVERSION=$(. /etc/os-release; echo $VERSION_ID)
+		OSDESCRIPTION=$(. /etc/os-release; echo $PRETTY_NAME)
+		OSVERSION_MAJOR="$OSVERSION"
+		OSVERSION_MINOR=""
+		OSID="${OSNAME}_$OSVERSION"
+		OSID_MAJOR="${OSNAME}_$OSVERSION"
 	fi
 }
 

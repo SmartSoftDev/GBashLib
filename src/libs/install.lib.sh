@@ -5,11 +5,9 @@ function add_j(){
 	v set -t path $1
 	sudo PYTHONPATH=$PYTHONPATH HOME=/root/ v set -t path $1
 }
+
 function add_git(){
 	v set -t git $1
-}
-function add_svn(){
-	v set -t svn $1
 }
 
 function check_path(){

@@ -17,5 +17,11 @@ function nginx_install_service(){
     sudo ln -sf $NGINX_CFG /etc/nginx/sites-enabled/
     sudo nginx -t || fatal "NGINX configuration failed"
     sudo systemctl restart nginx.service
+}
 
+function nginx_uninstall_service(){
+    for service_name in $@ ; do
+        sudo rm /etc/nginx/sites-available/gen.$service_name.cfg
+        sudo rm /etc/nginx/sites-enabled/gen.$service_name.cfg
+    done
 }

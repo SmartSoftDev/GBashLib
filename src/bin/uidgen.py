@@ -1,8 +1,16 @@
 #!/usr/bin/env python2
+"""
+ Copyright (C) Smartsoftdev.eu SRL - All Rights Reserved
+ Proprietary and confidential license.
+ Unauthorized copying via any medium or use of this file IS STRICTLY prohibited
+ For any license violations or more about commercial licensing please contact:
+ SmartSoftDev.eu
+"""
+
+import argparse
 import os
 import shutil
 import sys
-import argparse
 
 
 class config(object):
@@ -31,7 +39,6 @@ def hashfile(afile, hasher, blocksize=65536):
 
 
 def main(args):
-    
     global cfg
     parser = argparse.ArgumentParser(description="Uid generation based on file/string fingerprint")
     parser.add_argument('uid_name', type=str, nargs=1,
@@ -44,7 +51,7 @@ def main(args):
     subparsers = parser.add_subparsers(title="Sub commands")
     create_parser = subparsers.add_parser("create", help="manipulate ws/pkg evn: create uid with name uid_name")
     create_parser.set_defaults(cmd="create")
-    
+
     add_parser = subparsers.add_parser("add", help="manipulate ws/pkg evn: add new entry to uid with name uid_name")
     add_parser.set_defaults(cmd="add")
     add_parser.add_argument('-f', '--files', action='store_true', default=False,
@@ -66,10 +73,10 @@ def main(args):
 
     args = parser.parse_args()
     cfg.uid_name = args.uid_name[0]
-    cfg.uid_file = cfg.dir+"/"+args.uid_name[0]
+    cfg.uid_file = cfg.dir + "/" + args.uid_name[0]
     cfg.cmd = args.cmd
     cfg.silent = args.silent
-    
+
     try:
         os.makedirs(cfg.dir)
     except OSError as e:

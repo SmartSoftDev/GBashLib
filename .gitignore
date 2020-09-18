@@ -1,1 +1,14 @@
+# editors
+.vscode
 .project
+.vscode
+.project
+.cproject
+.pydevproject
+__pycache__
+*.pyc
+.settings
+.idea/
+venv/
+CMakeLists.txt.user
+vscode-bitbake-build

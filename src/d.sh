@@ -1,10 +1,6 @@
 #!/bin/bash
 if [ "$1" != "_print_autocomplete" ] ; then
 	if [ ! -f ./d.bl.sh ] ; then 
-		if [ "$1" == "_print_autocomplete_result" ] ; then
-			#no autocomplete results 
-			exit 0
-		fi
 		echo "there is no ./d.bl.sh to run in this directory"
 		exit 1
 	fi

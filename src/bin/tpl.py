@@ -1,13 +1,13 @@
-#!/usr/bin/env python2
-import os
+#!/usr/bin/env python3
 import argparse
+import os
 import sys
 
 cfg = lambda: None
 
 
 def process_line(fi_line):
-    for n, v in cfg.vars.iteritems():
+    for n, v in cfg.vars.items():
         fi_line = fi_line.replace(n, v)
     # print "out:"+l
     cfg.fo.write(fi_line)
@@ -45,7 +45,7 @@ def main():
     cfg.vars = dict()
     if cfg.args.vars:
         for v in cfg.args.vars:
-            v = v.split('=')
+            v = v.split('=', 1)
             name = v[0].strip()
             value = ''
             if len(v) > 1:
@@ -61,7 +61,7 @@ def main():
             cfg.fo_replPath = cfg.args.output
             cfg.fo = open(cfg.foPath, "w")
             if os.path.exists(cfg.fo_replPath):
-                cfg.fo_repl = open(cfg.fo_replPath, "rb")
+                cfg.fo_repl = open(cfg.fo_replPath, "r")
             else:
                 cfg.fo_repl = None
         else:
@@ -70,8 +70,8 @@ def main():
     if not cfg.args.input:
         cfg.fi = sys.stdin
     else:
-        cfg.fi = open(cfg.args.input, "rb")
-    # read the input file (template)
+        cfg.fi = open(cfg.args.input, "r")
+    # read the input file (tempalte)
     count = 0
     repl_id = ''
     while True:
