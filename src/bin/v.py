@@ -60,40 +60,30 @@ def main():
     parser = argparse.ArgumentParser(description="Variable storage for bash")
 
     subparsers = parser.add_subparsers(title="Sub commands")
-    sp = subparsers.add_parser(
-        "get", help="manipulate ws/pkg evn: create uid with name uid_name")
+    sp = subparsers.add_parser("get", help="manipulate ws/pkg evn: create uid with name uid_name")
     sp.set_defaults(cmd="get")
     sp.add_argument('Name', type=str, nargs="+", help='variable Name')
-    sp.add_argument('-t', '--type', default=DEFAULT_NAME_TYPE, help="Store name=value of a specific type (types does "
-                    "not colide)")
-    sp.add_argument('-s', '--search', default=False,
-                    action='store_true', help="Search the text in the name")
+    sp.add_argument('-t', '--type', default=DEFAULT_NAME_TYPE,
+                    help="Store name=value of a specific type (types does not collide)")
+    sp.add_argument('-s', '--search', default=False, action='store_true', help="Search the text in the name")
 
-    sp = subparsers.add_parser(
-        "set", help="manipulate ws/pkg evn: add new entry to uid with name uid_name")
+    sp = subparsers.add_parser("set", help="manipulate ws/pkg evn: add new entry to uid with name uid_name")
     sp.set_defaults(cmd="set")
     sp.add_argument('Name', type=str, nargs="+", help='variable Name')
-    sp.add_argument('-t', '--type', default=DEFAULT_NAME_TYPE, help="Store name=value of a specific type (types does "
-                    "not colide)")
-    sp.add_argument('-a', '--append', action='store_true',
-                    default=False, help="Append current value to existing one")
-    sp.add_argument('-s', '--separator', default=' ', help="only used with append flag, sets the separator when "
-                    "appending. default 'space' ")
+    sp.add_argument('-t', '--type', default=DEFAULT_NAME_TYPE,
+                    help="Store name=value of a specific type (types does not collide)")
+    sp.add_argument('-a', '--append', action='store_true', default=False, help="Append current value to existing one")
+    sp.add_argument('-s', '--separator', default=' ',
+                    help="only used with append flag, sets the separator when appending. default 'space' ")
 
     sp = subparsers.add_parser("list", help="Print all values")
     sp.set_defaults(cmd="list")
-    sp.add_argument('-t', '--type', default=DEFAULT_NAME_TYPE,
-                    help="lists name=value of a specific type")
-    sp.add_argument('-a', '--all', action='store_true',
-                    default=False, help="lists name=value for all types")
-    sp.add_argument('-d', '--decorate', action='store_true',
-                    default=False, help="always decorate for terminal")
-    sp.add_argument('-n', '--name-only', action='store_true',
-                    default=False, help="show only names")
-    sp.add_argument('-v', '--value-only', action='store_true',
-                    default=False, help="show only values")
-    sp.add_argument('-s', '--separator', default='\n',
-                    help="set separator string ")
+    sp.add_argument('-t', '--type', default=DEFAULT_NAME_TYPE, help="lists name=value of a specific type")
+    sp.add_argument('-a', '--all', action='store_true', default=False, help="lists name=value for all types")
+    sp.add_argument('-d', '--decorate', action='store_true', default=False, help="always decorate for terminal")
+    sp.add_argument('-n', '--name-only', action='store_true', default=False, help="show only names")
+    sp.add_argument('-v', '--value-only', action='store_true', default=False, help="show only values")
+    sp.add_argument('-s', '--separator', default='\n', help="set separator string ")
 
     sp = subparsers.add_parser("del", help="delete one entry")
     sp.add_argument('Name', type=str, nargs="+", help='variable Name')
@@ -131,8 +121,7 @@ def main():
                     # value exists just update
                     if cfg.args.append:
                         # if is append operation construct
-                        value = cfg.config[args.type][name] + \
-                            cfg.args.separator+value
+                        value = cfg.config[args.type][name] + cfg.args.separator+value
                 # save the value
                 cfg.config[args.type][name] = value
                 save_config()
