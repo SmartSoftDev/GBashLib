@@ -61,6 +61,7 @@ def main():
     sp.add_argument('Name', type=str, nargs="+", help='variable Name')
     sp.add_argument('-t', '--type', default=DEFAULT_NAME_TYPE,
                     help="Store name=value of a specific type (types does not collide)")
+    sp.add_argument('-s', '--search', default=False, action='store_true', help="Search the text in the name")
 
     sp = subparsers.add_parser("set", help="manipulate ws/pkg evn: add new entry to uid with name uid_name")
     sp.set_defaults(cmd="set")
@@ -79,6 +80,13 @@ def main():
     sp.add_argument('-n', '--name-only', action='store_true', default=False, help="show only names")
     sp.add_argument('-v', '--value-only', action='store_true', default=False, help="show only values")
     sp.add_argument('-s', '--separator', default='\n', help="set separator string ")
+
+    sp = subparsers.add_parser("del", help="delete one entry")
+    sp.add_argument('Name', type=str, nargs="+", help='variable Name')
+    sp.add_argument('-t', '--type', default=DEFAULT_NAME_TYPE,
+                    help="delete entry from specific type")
+    sp.set_defaults(cmd="del")
+
     sp = subparsers.add_parser("drop", help="Delete hole DB")
     sp.set_defaults(cmd="drop")
 
@@ -108,7 +116,7 @@ def main():
                     # value exists just update
                     if cfg.args.append:
                         # if is append operation construct
-                        value = cfg.config[args.type][name]+cfg.args.separator+value
+                        value = cfg.config[args.type][name] + cfg.args.separator+value
                 # save the value
                 cfg.config[args.type][name] = value
                 save_config()
