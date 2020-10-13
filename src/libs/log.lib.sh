@@ -47,3 +47,9 @@ function error_trap(){
 	set -o errtrace
 	trap '__error_report $BASH_SOURCE $LINENO' ERR
 }
+
+function check_var_empty(){
+    local var_name="$1"
+    local var_value="$2"
+    [ "$var_value" == "" ] && fatal "$var_name is EMPTY!"
+}
