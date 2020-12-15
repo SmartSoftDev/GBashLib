@@ -9,15 +9,7 @@ COLOR_GREEN = '\033[0;32m'
 COLOR_CYAN = '\033[0;36m'
 
 DEFAULT_NAME_TYPE = '.'
-
-
-def cfg(): return None
-
-
-cfg.path = os.environ['HOME']
-cfg.dbPath = os.path.join(cfg.path, ".v.yaml")
-cfg.config = {}
-
+cfg = lambda: None  # singleton
 
 def read_config():
     if not os.path.exists(cfg.path):
@@ -28,27 +20,41 @@ def read_config():
     else:
         with open(cfg.dbPath) as f:
             cfg.config = yaml.load(f, Loader=yaml.FullLoader)
+        if cfg.config is None:
+            cfg.config = {}
 
 
 def save_config():
+    print(f"save to: {cfg.dbPath}")
     with open(cfg.dbPath, "w") as f:
         yaml.dump(cfg.config, f)
 
 
-def print_one(cfg, name, value, last=False):
+def print_one(cfg, name, value, type_name, last=False):
     args = cfg.args
-    if sys.stdout.isatty() or args.decorate:
-        s = "%s%s%s" % (COLOR_CYAN, name, COLOR_NONE,)
-        if args.value_only:
-            s = "%s%s%s" % (COLOR_GREEN, value, COLOR_NONE)
-        elif not args.name_only:
-            s += " = %s%s%s" % (COLOR_GREEN, value, COLOR_NONE)
+    if type_name != DEFAULT_NAME_TYPE:
+        type_name += "__"
     else:
-        s = name
+        type_name = ""
+    if (sys.stdout.isatty() or args.decorate) and not args.bash:
+        s = f"{COLOR_CYAN}{type_name}{name}{COLOR_NONE}"
+        if args.value_only:
+            s = f"{COLOR_GREEN}{value}{COLOR_NONE}"
+        elif not args.name_only:
+            s += f" = {COLOR_GREEN}{value}{COLOR_NONE}"
+    elif args.bash:
+        s = type_name + name
+        if args.value_only:
+            s = f'"{value}"'
+        elif not args.name_only:
+            s += f'="{value}"'
+    else:
+        s = type_name + name
         if args.value_only:
             s = value
         elif not args.name_only:
             s += "=" + value
+
     if last:
         s += "\n"
     else:
@@ -58,6 +64,7 @@ def print_one(cfg, name, value, last=False):
 
 def main():
     parser = argparse.ArgumentParser(description="Variable storage for bash")
+    parser.add_argument("-l", "--local", default=False, action='store_true', help="User ./v.yaml instead of ~/.v.yaml")
 
     subparsers = parser.add_subparsers(title="Sub commands")
     sp = subparsers.add_parser("get", help="manipulate ws/pkg evn: create uid with name uid_name")
@@ -84,6 +91,7 @@ def main():
     sp.add_argument('-n', '--name-only', action='store_true', default=False, help="show only names")
     sp.add_argument('-v', '--value-only', action='store_true', default=False, help="show only values")
     sp.add_argument('-s', '--separator', default='\n', help="set separator string ")
+    sp.add_argument('-b', '--bash', action='store_true', default=False, help="prints it for bash interpretation")
 
     sp = subparsers.add_parser("del", help="delete one entry")
     sp.add_argument('Name', type=str, nargs="+", help='variable Name')
@@ -95,6 +103,21 @@ def main():
     sp.set_defaults(cmd="drop")
 
     args = parser.parse_args()
+    if not hasattr(args, 'cmd'):
+        print("Not enough arguments! \n\n")
+        parser.print_help(sys.stderr)
+        return
+
+
+
+    if args.local:
+        cfg.path = os.getcwd()
+        cfg.dbPath = os.path.join(cfg.path, "v.yaml")
+    else:
+        cfg.path = os.environ['HOME']
+        cfg.dbPath = os.path.join(cfg.path, ".v.yaml")
+    cfg.config = {}
+
     # print args
     cfg.args = args
     read_config()
@@ -140,15 +163,15 @@ def main():
     elif args.cmd == 'list':
         if args.all:
             for type_name, tip in cfg.config.items():
-                if type_name != DEFAULT_NAME_TYPE:
+                if type_name != DEFAULT_NAME_TYPE and not args.bash:
                     print("%s:" % (type_name,))
                 for name, value in tip.items():
-                    print_one(cfg, name, value)
+                    print_one(cfg, name, value, type_name)
 
         else:
             if args.type in cfg.config:
                 for name, value in cfg.config[args.type].items():
-                    print_one(cfg, name, value)
+                    print_one(cfg, name, value, args.type)
     elif args.cmd == 'drop':
         os.remove(cfg.dbPath)
     elif args.cmd == 'del':
