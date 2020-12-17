@@ -36,8 +36,8 @@ def print_one(cfg, name, value, type_name, last=False):
         type_name += "__"
     else:
         type_name = ""
-    if (sys.stdout.isatty() or args.decorate) and not args.bash:
-        s = f"{COLOR_CYAN}{type_name}{name}{COLOR_NONE}"
+    if args.decorate and not args.bash:
+        s = f"{COLOR_CYAN}{name}{COLOR_NONE}"
         if args.value_only:
             s = f"{COLOR_GREEN}{value}{COLOR_NONE}"
         elif not args.name_only:
@@ -49,7 +49,7 @@ def print_one(cfg, name, value, type_name, last=False):
         elif not args.name_only:
             s += f'="{value}"'
     else:
-        s = type_name + name
+        s = name
         if args.value_only:
             s = value
         elif not args.name_only:
@@ -108,8 +108,6 @@ def main():
         parser.print_help(sys.stderr)
         return
 
-
-
     if args.local:
         cfg.path = os.getcwd()
         cfg.dbPath = os.path.join(cfg.path, "v.yaml")
@@ -161,6 +159,9 @@ def main():
                             if name in n:
                                 print(v)
     elif args.cmd == 'list':
+        if sys.stdout.isatty():
+            args.decorate = True
+
         if args.all:
             for type_name, tip in cfg.config.items():
                 if type_name != DEFAULT_NAME_TYPE and not args.bash:
