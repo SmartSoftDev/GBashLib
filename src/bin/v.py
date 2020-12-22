@@ -25,7 +25,6 @@ def read_config():
 
 
 def save_config():
-    print(f"save to: {cfg.dbPath}")
     with open(cfg.dbPath, "w") as f:
         yaml.dump(cfg.config, f)
 
