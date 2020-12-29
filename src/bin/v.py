@@ -10,14 +10,12 @@ COLOR_CYAN = '\033[0;36m'
 
 DEFAULT_NAME_TYPE = '.'
 cfg = lambda: None  # singleton
+cfg.env_name = None  # means no special MULTI-ENV name was given.
+
 
 def read_config():
-    if not os.path.exists(cfg.path):
-        os.makedirs(cfg.path)
     # read config file
-    if not os.path.exists(cfg.dbPath):
-        save_config()
-    else:
+    if os.path.exists(cfg.dbPath):
         with open(cfg.dbPath) as f:
             cfg.config = yaml.load(f, Loader=yaml.FullLoader)
         if cfg.config is None:
@@ -25,6 +23,8 @@ def read_config():
 
 
 def save_config():
+    if not os.path.exists(cfg.path):
+        os.makedirs(cfg.path)
     with open(cfg.dbPath, "w") as f:
         yaml.dump(cfg.config, f)
 
@@ -64,6 +64,16 @@ def print_one(cfg, name, value, type_name, last=False):
 def main():
     parser = argparse.ArgumentParser(description="Variable storage for bash")
     parser.add_argument("-l", "--local", default=False, action='store_true', help="User ./v.yaml instead of ~/.v.yaml")
+    parser.add_argument("-e", "--env_name", default=None, type=str,
+                        help="Multi-Env Name to load (specifies the prefix for yaml file."
+                             " For ex: 'v -e MULTI_ENV_NAME -l list -a --bash'"
+                             " will load this file v.MULTI_EVN_NAME.yaml)."
+                             " Note: overwrites the environ variable!")
+    parser.add_argument("-E", "--env_var_name", default='V_ENV_NAME', type=str,
+                        help="Environ variable name to get the MULTI_ENV_NAME from environ (v.MULTI_EVN_NAME.yaml)."
+                             " default=V_ENV_NAME."
+                             " Example usage: 'export MY_V_ENV_NAME=prod ; v -e MY_V_ENV_NAME -l list -a --bash'"
+                             " this will load v.prod.yaml file")
 
     subparsers = parser.add_subparsers(title="Sub commands")
     sp = subparsers.add_parser("get", help="manipulate ws/pkg evn: create uid with name uid_name")
@@ -108,8 +118,20 @@ def main():
         return
 
     if args.local:
+        env_name = None
+        if args.env_name:
+            env_name = args.env_name
+        else:
+            if args.env_var_name in os.environ:
+                env_name = os.environ[args.env_var_name]
+        if env_name:
+            file_name = f"v.{env_name}.yaml"
+            cfg.env_name = env_name
+        else:
+            file_name = 'v.yaml'
+
         cfg.path = os.getcwd()
-        cfg.dbPath = os.path.join(cfg.path, "v.yaml")
+        cfg.dbPath = os.path.join(cfg.path, file_name)
     else:
         cfg.path = os.environ['HOME']
         cfg.dbPath = os.path.join(cfg.path, ".v.yaml")
@@ -160,6 +182,8 @@ def main():
     elif args.cmd == 'list':
         if sys.stdout.isatty():
             args.decorate = True
+        if cfg.env_name:
+            print_one(cfg, 'V_ENV_NAME', cfg.env_name, DEFAULT_NAME_TYPE)
 
         if args.all:
             for type_name, tip in cfg.config.items():
