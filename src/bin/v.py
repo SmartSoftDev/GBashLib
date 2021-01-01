@@ -11,6 +11,8 @@ COLOR_CYAN = '\033[0;36m'
 DEFAULT_NAME_TYPE = '.'
 cfg = lambda: None  # singleton
 cfg.env_name = None  # means no special MULTI-ENV name was given.
+KEY_TYPES = '~types'
+KEY_VERSION = '~version'
 
 
 def read_config():
@@ -20,6 +22,24 @@ def read_config():
             cfg.config = yaml.load(f, Loader=yaml.FullLoader)
         if cfg.config is None:
             cfg.config = {}
+    if cfg.config.get(KEY_VERSION, 0) >= 2:
+        return  # already migrated
+
+    # we need to convert to v2 format
+    migrated_types = {}
+    for k, v in cfg.config.items():
+        if k in (DEFAULT_NAME_TYPE, KEY_TYPES):
+            continue
+        if isinstance(v, dict):
+            migrated_types[k] = v
+    simple_values = cfg.config.get(DEFAULT_NAME_TYPE, {})
+    # if there are no values in migrated and in simple values, means everything is fine!
+    # the config is compatible with v2 format
+    if len(migrated_types) or len(simple_values):
+        cfg.config = simple_values
+        if len(migrated_types):
+            cfg.config[KEY_TYPES] = migrated_types
+        save_config()
 
 
 def save_config():
@@ -29,9 +49,9 @@ def save_config():
         yaml.dump(cfg.config, f)
 
 
-def print_one(cfg, name, value, type_name, last=False):
+def print_one(cfg, name, value, type_name=None, last=False):
     args = cfg.args
-    if type_name != DEFAULT_NAME_TYPE:
+    if type_name:
         type_name += "__"
     else:
         type_name = ""
@@ -79,14 +99,14 @@ def main():
     sp = subparsers.add_parser("get", help="manipulate ws/pkg evn: create uid with name uid_name")
     sp.set_defaults(cmd="get")
     sp.add_argument('Name', type=str, nargs="+", help='variable Name')
-    sp.add_argument('-t', '--type', default=DEFAULT_NAME_TYPE,
+    sp.add_argument('-t', '--type', default=None,
                     help="Store name=value of a specific type (types does not collide)")
     sp.add_argument('-s', '--search', default=False, action='store_true', help="Search the text in the name")
 
     sp = subparsers.add_parser("set", help="manipulate ws/pkg evn: add new entry to uid with name uid_name")
     sp.set_defaults(cmd="set")
     sp.add_argument('Name', type=str, nargs="+", help='variable Name')
-    sp.add_argument('-t', '--type', default=DEFAULT_NAME_TYPE,
+    sp.add_argument('-t', '--type', default=None,
                     help="Store name=value of a specific type (types does not collide)")
     sp.add_argument('-a', '--append', action='store_true', default=False, help="Append current value to existing one")
     sp.add_argument('-s', '--separator', default=' ',
@@ -94,7 +114,7 @@ def main():
 
     sp = subparsers.add_parser("list", help="Print all values")
     sp.set_defaults(cmd="list")
-    sp.add_argument('-t', '--type', default=DEFAULT_NAME_TYPE, help="lists name=value of a specific type")
+    sp.add_argument('-t', '--type', default=None, help="lists name=value of a specific type")
     sp.add_argument('-a', '--all', action='store_true', default=False, help="lists name=value for all types")
     sp.add_argument('-d', '--decorate', action='store_true', default=False, help="always decorate for terminal")
     sp.add_argument('-n', '--name-only', action='store_true', default=False, help="show only names")
@@ -104,7 +124,7 @@ def main():
 
     sp = subparsers.add_parser("del", help="delete one entry")
     sp.add_argument('Name', type=str, nargs="+", help='variable Name')
-    sp.add_argument('-t', '--type', default=DEFAULT_NAME_TYPE,
+    sp.add_argument('-t', '--type', default=None,
                     help="delete entry from specific type")
     sp.set_defaults(cmd="del")
 
@@ -140,6 +160,15 @@ def main():
     # print args
     cfg.args = args
     read_config()
+
+    # get the dict from the type
+    if args.type:
+        if args.type not in cfg.config[KEY_TYPES]:
+            cfg.config[KEY_TYPES] = {}
+        config = cfg.config[KEY_TYPES][args.type]
+    else:
+        config = cfg.config
+
     if args.cmd == 'set':
         for n in args.Name:
             n = n.split('=', 1)
@@ -149,36 +178,31 @@ def main():
                 value = n[1]
             else:
                 value = ''
-
             if len(value) == 0:
-                if args.type in cfg.config:
-                    if name in cfg.config[args.type]:
-                        del cfg.config[args.type][name]
-                        save_config()
+                # if there is no value, let's delete the key as well
+                if name in config:
+                    del config[name]
+                    save_config()
             else:
-                # create the type dict is does not exist
-                if args.type not in cfg.config:
-                    cfg.config[args.type] = {}
-                if name in cfg.config[args.type]:
+                if name in config:
                     # value exists just update
                     if cfg.args.append:
                         # if is append operation construct
-                        value = cfg.config[args.type][name] + cfg.args.separator+value
+                        value = config[name] + cfg.args.separator + value
                 # save the value
-                cfg.config[args.type][name] = value
+                config[name] = value
                 save_config()
 
     elif args.cmd == 'get':
         for n in args.Name:
             name = n.strip()
-            if args.type in cfg.config:
-                if name in cfg.config[args.type]:
-                    print(cfg.config[args.type][name])
-                else:
-                    if args.search:
-                        for n, v in cfg.config[args.type].items():
-                            if name in n:
-                                print(v)
+            if args.search:
+                for k, v in config.items():
+                    if name in k:
+                        print(v)
+            elif name in config:
+                print(config[name])
+
     elif args.cmd == 'list':
         if sys.stdout.isatty():
             args.decorate = True
@@ -186,27 +210,32 @@ def main():
             print_one(cfg, 'V_ENV_NAME', cfg.env_name, DEFAULT_NAME_TYPE)
 
         if args.all:
-            for type_name, tip in cfg.config.items():
-                if type_name != DEFAULT_NAME_TYPE and not args.bash:
+            for k, v in cfg.config.items():
+                if k == KEY_TYPES:
+                    continue
+                print_one(cfg, k, v)
+            for type_name, tip in cfg.config[KEY_TYPES].items():
+                if not args.bash:
                     print("%s:" % (type_name,))
                 for name, value in tip.items():
                     print_one(cfg, name, value, type_name)
 
         else:
-            if args.type in cfg.config:
-                for name, value in cfg.config[args.type].items():
-                    print_one(cfg, name, value, args.type)
+            for name, value in config.items():
+                if name in (KEY_TYPES, KEY_VERSION):
+                    continue
+                print_one(cfg, name, value, args.type)
     elif args.cmd == 'drop':
         os.remove(cfg.dbPath)
     elif args.cmd == 'del':
         for n in args.Name:
             name = n.strip()
-            if args.type in cfg.config:
-                if name in cfg.config[args.type]:
-                    del cfg.config[args.type][name]
-                    if len(cfg.config[args.type]) == 0:
-                        # delete the type dict
-                        del cfg.config[args.type]
+            if name in config:
+                del config[name]
+                if len(config) == 0:
+                    # delete the hole type dict
+                    if args.type:
+                        del cfg.config[KEY_TYPES][args.type]
         save_config()
 
 
