@@ -1,8 +1,21 @@
 #!/usr/bin/env python3
+"""
+v tool has following features:
+* reads / stores configuration values in yaml files
+* can read values from single location ($HOME/.v.yaml)
+* can read from ./v.yaml
+* can read and combine recursively from , ./v.yaml, ../v.yaml, ../../v.yaml ... (ONLY read, write does not work
+recursively)
+* can switch file_name from v.yaml to v.{NAME}.yaml depending of argument or environ variable
+* can store KEY=VALUE pairs, or KEY=VALUE in a special "TYPE" (group)
+
+TODO: support encryption / decryption on the fly.
+"""
 import os
 import argparse
 import sys
 import yaml
+
 # from ghepy.term.colors
 COLOR_NONE = '\033[0m'  # No Color
 COLOR_GREEN = '\033[0;32m'
@@ -15,31 +28,55 @@ KEY_TYPES = '~types'
 KEY_VERSION = '~version'
 
 
-def read_config():
+def read_single_file(file_path):
     # read config file
-    if os.path.exists(cfg.dbPath):
-        with open(cfg.dbPath) as f:
-            cfg.config = yaml.load(f, Loader=yaml.FullLoader)
-        if cfg.config is None:
-            cfg.config = {}
-    if cfg.config.get(KEY_VERSION, 0) >= 2:
-        return  # already migrated
+    if not os.path.exists(file_path):
+        return dict()
+
+    with open(file_path) as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+    if config is None:
+        config = {}
+    if config.get(KEY_VERSION, 0) >= 2:
+        return config  # already migrated
 
     # we need to convert to v2 format
     migrated_types = {}
-    for k, v in cfg.config.items():
+    for k, v in config.items():
         if k in (DEFAULT_NAME_TYPE, KEY_TYPES):
             continue
         if isinstance(v, dict):
             migrated_types[k] = v
-    simple_values = cfg.config.get(DEFAULT_NAME_TYPE, {})
+    simple_values = config.get(DEFAULT_NAME_TYPE, {})
     # if there are no values in migrated and in simple values, means everything is fine!
     # the config is compatible with v2 format
     if len(migrated_types) or len(simple_values):
-        cfg.config = simple_values
+        config = simple_values
         if len(migrated_types):
-            cfg.config[KEY_TYPES] = migrated_types
+            config[KEY_TYPES] = migrated_types
         save_config()
+    return config
+
+
+def read_config(recursive):
+    if recursive is None:
+        # no recursive
+        cfg.config = read_single_file(cfg.dbPath)
+    else:
+        if recursive == 0:
+            recursive = 999
+        config = {}
+        file_path = cfg.dbPath
+        dir_path = cfg.path
+        for i in range(recursive):
+            config.update(read_single_file(file_path))
+            if dir_path == '/':
+                break  # reached the end
+            dir_path = os.path.dirname(dir_path)
+            file_path = os.path.join(dir_path, cfg.file_name)
+            if not os.path.isfile(file_path):
+                continue  # we continue here to force reading X recursive directories as specified in args.
+        cfg.config = config
 
 
 def save_config():
@@ -102,6 +139,8 @@ def main():
     sp.add_argument('-t', '--type', default=None,
                     help="Store name=value of a specific type (types does not collide)")
     sp.add_argument('-s', '--search', default=False, action='store_true', help="Search the text in the name")
+    sp.add_argument('-r', '--recursive', type=int, default=None,
+                    help="only if local is set, it will read X directories above this one and merge the values")
 
     sp = subparsers.add_parser("set", help="manipulate ws/pkg evn: add new entry to uid with name uid_name")
     sp.set_defaults(cmd="set")
@@ -121,6 +160,8 @@ def main():
     sp.add_argument('-v', '--value-only', action='store_true', default=False, help="show only values")
     sp.add_argument('-s', '--separator', default='\n', help="set separator string ")
     sp.add_argument('-b', '--bash', action='store_true', default=False, help="prints it for bash interpretation")
+    sp.add_argument('-r', '--recursive', type=int, default=None,
+                    help="only if local is set, it will read X directories above this one and merge the values")
 
     sp = subparsers.add_parser("del", help="delete one entry")
     sp.add_argument('Name', type=str, nargs="+", help='variable Name')
@@ -152,6 +193,7 @@ def main():
 
         cfg.path = os.getcwd()
         cfg.dbPath = os.path.join(cfg.path, file_name)
+        cfg.file_name = file_name
     else:
         cfg.path = os.environ['HOME']
         cfg.dbPath = os.path.join(cfg.path, ".v.yaml")
@@ -159,12 +201,17 @@ def main():
 
     # print args
     cfg.args = args
-    read_config()
+    if args.cmd in ("get", "list"):
+        read_config(args.recursive)
+    else:
+        read_config(None)
 
     # get the dict from the type
     if args.type:
-        if args.type not in cfg.config[KEY_TYPES]:
+        if KEY_TYPES not in cfg.config:
             cfg.config[KEY_TYPES] = {}
+        if args.type not in cfg.config[KEY_TYPES]:
+            cfg.config[KEY_TYPES][args.type] = {}
         config = cfg.config[KEY_TYPES][args.type]
     else:
         config = cfg.config
@@ -214,11 +261,12 @@ def main():
                 if k == KEY_TYPES:
                     continue
                 print_one(cfg, k, v)
-            for type_name, tip in cfg.config[KEY_TYPES].items():
-                if not args.bash:
-                    print("%s:" % (type_name,))
-                for name, value in tip.items():
-                    print_one(cfg, name, value, type_name)
+            if KEY_TYPES in cfg.config:
+                for type_name, tip in cfg.config[KEY_TYPES].items():
+                    if not args.bash:
+                        print("%s:" % (type_name,))
+                    for name, value in tip.items():
+                        print_one(cfg, name, value, type_name)
 
         else:
             for name, value in config.items():
