@@ -254,7 +254,7 @@ def main():
         if sys.stdout.isatty():
             args.decorate = True
         if cfg.env_name:
-            print_one(cfg, 'V_ENV_NAME', cfg.env_name, DEFAULT_NAME_TYPE)
+            print_one(cfg, 'V_ENV_NAME', cfg.env_name)
 
         if args.all:
             for k, v in cfg.config.items():
