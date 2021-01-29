@@ -5,26 +5,28 @@ SPHINXOPTS=-W
 SPHINXBUILD=sphinx-build
 SPHINX_DEFAULT_TARGET="singlehtml"
 
+declare -a REQS  # initialing
+
 function reqs_find(){
 	local path='.'
 	if [ "$1" != "" ] ; then
 		path=$1
 	fi
-	REQS=$(find $path -name "0_req" -type d) 
+	REQS=$(find $path -name "0_req" -type d)
 }
 
 function reqs_build_one(){
 	local path=$1
 	local target=$SPHINX_DEFAULT_TARGET
-	if [ "$2" != "" ] ; then 
+	if [ "$2" != "" ] ; then
 		target="$2"
 	fi
-	$SPHINXBUILD -M $target $SHINXOPT $path ${path}_build ${SPHINXOPTS}
+	$SPHINXBUILD -M $target $path ${path}_build ${SPHINXOPTS}
 }
 
 function reqs_build_all(){
-	local targe=$SPHINX_DEFAULT_TARGET
-	if [ "$1" != "" ] ; then 
+	local target=$SPHINX_DEFAULT_TARGET
+	if [ "$1" != "" ] ; then
 		target="$1"
 	fi
 	for path in ${REQS[@]} ; do
@@ -45,13 +47,13 @@ function reqs_show_all_singlehtml(){
 		if [ ! -d ${path}_build ] ; then
 			reqs_build_one $path $target
 		fi
-		browser_files="$browser_files ${path}_build/singlehtml/index.html"
+		browser_files="$browser_files ${path}_build/$SPHINX_DEFAULT_TARGET/index.html"
 	done
 	if [ "$browser" != "" ] ; then
 		$browser $browser_files
 	else
 		for i in $browser_files ; do
-			echo $(readlink -e $i) 
+			echo $(readlink -e $i)
 		done
 	fi
 }
