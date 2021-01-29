@@ -21,22 +21,30 @@ function reqs_build_one(){
 	if [ "$2" != "" ] ; then
 		target="$2"
 	fi
+	local this_dir="$( dirname "${BASH_SOURCE[0]}" )"
+	local puml_exec="$(readlink -e "$this_dir/../../tools/plantuml.jar")"
+	echo "Start building document $path"
+	for pfile in $(find -L $path -name "*.puml" -type f) ; do
+		java -jar $puml_exec $pfile || { echo "failed to convert PUML to PNG: '$pfile'" ; return 1 ; }
+		mv "${pfile:0:(-5)}.png" $pfile.png
+		echo "Converted puml file $pfile to $pfile.png"
+	done
 	$SPHINXBUILD -M $target $path ${path}_build ${SPHINXOPTS}
 }
 
-function reqs_build_all(){
+function reqs_build(){
 	local target=$SPHINX_DEFAULT_TARGET
 	if [ "$1" != "" ] ; then
 		target="$1"
 	fi
 	for path in ${REQS[@]} ; do
-		reqs_build_one $path $target
+		reqs_build_one $path $target || return 1
 	done
 }
 
-function reqs_build(){
-	reqs_find
-	reqs_build_all
+function reqs_build_all(){
+	reqs_find || return 1
+	reqs_build || return 1
 }
 
 function reqs_show_all_singlehtml(){
@@ -57,3 +65,8 @@ function reqs_show_all_singlehtml(){
 		done
 	fi
 }
+
+function reqs_install_dependencies(){
+	sudo -H pip3 install --upgrade --quiet Sphinx recommonmark sphinx-rtd-theme
+}
+
