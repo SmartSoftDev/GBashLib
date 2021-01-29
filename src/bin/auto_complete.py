@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-'''
+"""
 Auto complete helper.
 TODO:
 * de facut variata de intrebat autoCOmpleteul de la Binar direct.
@@ -8,7 +8,7 @@ TODO:
 * de adauugat comanda pentru import la toate *.autocomplete.yaml dintr-un director
     comanda import
 * de implementat optiuni de tip FILE si de tip ENUM
-'''
+"""
 import argparse
 import os
 
@@ -90,6 +90,7 @@ def cmd_del():
 
 def print_option(opt):
     return "{}/{}/{}".format(opt['short'], opt['long'], opt['type'] if opt['type'] else "")
+
 
 
 def process_print_cmd():

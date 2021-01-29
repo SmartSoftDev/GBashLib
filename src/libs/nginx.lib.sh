@@ -16,6 +16,7 @@ function nginx_install_service(){
     sudo tpl -i $tpl_path -o $NGINX_CFG $v_cmd $@
     sudo ln -sf $NGINX_CFG /etc/nginx/sites-enabled/
     sudo nginx -t || fatal "NGINX configuration failed"
+    sudo systemctl restart nginx.service
 }
 
 function nginx_uninstall_service(){

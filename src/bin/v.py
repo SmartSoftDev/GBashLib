@@ -16,7 +16,7 @@ import argparse
 import sys
 import yaml
 
-# from ghepy.term.colors
+# Bash (terminal) colors
 COLOR_NONE = '\033[0m'  # No Color
 COLOR_GREEN = '\033[0;32m'
 COLOR_CYAN = '\033[0;36m'
@@ -92,7 +92,7 @@ def print_one(cfg, name, value, type_name=None, last=False):
         type_name += "__"
     else:
         type_name = ""
-    if args.decorate and not args.bash:
+    if  (sys.stdout.isatty() or args.decorate) and not args.bash:
         s = f"{COLOR_CYAN}{name}{COLOR_NONE}"
         if args.value_only:
             s = f"{COLOR_GREEN}{value}{COLOR_NONE}"

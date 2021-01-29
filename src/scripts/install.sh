@@ -1,6 +1,6 @@
 #!/bin/bash
 DIR=$(readlink -e $(dirname ${BASH_SOURCE[0]})/../)
-set -e 
+set -e
 
 sudo ln -sf $DIR/d.sh /bin/d
 sudo ln -sf $DIR/r.sh /bin/r
