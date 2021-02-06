@@ -27,7 +27,7 @@ function reqs_build_one(){
 	for pfile in $(find -L $path -name "*.puml" -type f) ; do
 		java -jar $puml_exec $pfile || { echo "failed to convert PUML to PNG: '$pfile'" ; return 1 ; }
 		mv "${pfile:0:(-5)}.png" $pfile.png
-		echo "Converted puml file $pfile to $pfile.png"
+		echo "Converted puml file: $pfile.png"
 	done
 	$SPHINXBUILD -M $target $path ${path}_build ${SPHINXOPTS}
 }
@@ -68,5 +68,6 @@ function reqs_show_all_singlehtml(){
 
 function reqs_install_dependencies(){
 	sudo -H pip3 install --upgrade --quiet Sphinx recommonmark sphinx-rtd-theme
+	sudo apt install graphviz
 }
 
