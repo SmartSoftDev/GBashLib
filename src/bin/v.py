@@ -16,16 +16,21 @@ import argparse
 import sys
 import yaml
 
+import gnupg
+
+from types import SimpleNamespace
+
 # Bash (terminal) colors
 COLOR_NONE = '\033[0m'  # No Color
 COLOR_GREEN = '\033[0;32m'
 COLOR_CYAN = '\033[0;36m'
 
 DEFAULT_NAME_TYPE = '.'
-cfg = lambda: None  # singleton
+cfg = SimpleNamespace()  # singleton
 cfg.env_name = None  # means no special MULTI-ENV name was given.
 KEY_TYPES = '~types'
 KEY_VERSION = '~version'
+NO_GPG_KEYS_ERROR_MSG = "Could not delete all public keys, for encryption should remain at least one public key!!"
 
 
 def read_single_file(file_path):
@@ -45,7 +50,7 @@ def read_single_file(file_path):
     for k, v in config.items():
         if k in (DEFAULT_NAME_TYPE, KEY_TYPES):
             continue
-        if isinstance(v, dict):
+        if isinstance(v, dict) and v.get('enc_type') is None:
             migrated_types[k] = v
     simple_values = config.get(DEFAULT_NAME_TYPE, {})
     # if there are no values in migrated and in simple values, means everything is fine!
@@ -92,7 +97,7 @@ def print_one(cfg, name, value, type_name=None, last=False):
         type_name += "__"
     else:
         type_name = ""
-    if  (sys.stdout.isatty() or args.decorate) and not args.bash:
+    if (sys.stdout.isatty() or args.decorate) and not args.bash:
         s = f"{COLOR_CYAN}{name}{COLOR_NONE}"
         if args.value_only:
             s = f"{COLOR_GREEN}{value}{COLOR_NONE}"
@@ -151,6 +156,13 @@ def main():
     sp.add_argument('-s', '--separator', default=' ',
                     help="only used with append flag, sets the separator when appending. default 'space' ")
 
+    sp = subparsers.add_parser("enc", help="manipulate ws/pkg evn: add new gpg encrypted entry "
+                                           "to uid with name uid_name ")
+    sp.set_defaults(cmd="enc")
+    sp.add_argument('Name', type=str, help='variable Name. Ex:"test_var=1234"')
+    sp.add_argument('v_type', type=str, help='variable type.', choices=["str", "int", "float"])
+    sp.add_argument('recipients', type=str, nargs="+", help='PGP users fingerprints|IDs')
+
     sp = subparsers.add_parser("list", help="Print all values")
     sp.set_defaults(cmd="list")
     sp.add_argument('-t', '--type', default=None, help="lists name=value of a specific type")
@@ -171,6 +183,16 @@ def main():
 
     sp = subparsers.add_parser("drop", help="Delete hole DB")
     sp.set_defaults(cmd="drop")
+
+    sp = subparsers.add_parser("add-public-key", help="Add pub key")
+    sp.set_defaults(cmd="add-public-key")
+    sp.add_argument("-k", "--key-name", type=str, default=None, help='key Name. Ex:"test_key"')
+    sp.add_argument('recipients', type=str, nargs="+", help='PGP users fingerprints|IDs')
+
+    sp = subparsers.add_parser("del-public-key", help="Delete pub key")
+    sp.set_defaults(cmd="del-public-key")
+    sp.add_argument("-k", "--key-name", type=str, default=None, help='variable Name. Ex:"test_key"')
+    sp.add_argument('recipients', type=str, nargs="+", help='PGP users fingerprints|IDs')
 
     args = parser.parse_args()
     if not hasattr(args, 'cmd'):
@@ -205,9 +227,8 @@ def main():
         read_config(args.recursive)
     else:
         read_config(None)
-
     # get the dict from the type
-    if args.type:
+    if hasattr(args, "type"):
         if KEY_TYPES not in cfg.config:
             cfg.config[KEY_TYPES] = {}
         if args.type not in cfg.config[KEY_TYPES]:
@@ -239,6 +260,35 @@ def main():
                 # save the value
                 config[name] = value
                 save_config()
+
+    elif args.cmd == 'enc':
+        gpg = gnupg.GPG(gnupghome=os.path.join(os.environ['HOME'], ".gnupg"), keyring="pubring.kbx")
+        gpg.encoding = 'utf-8'
+        gpg_usr_s_id = [{"id": user_key['fingerprint'], "uids": user_key['uids']} for user_key in gpg.list_keys()
+                        if user_key['fingerprint'] in args.recipients]
+        if len(gpg_usr_s_id) < 1:
+            parser.error(message=f"Didn't find public keys for passed fingerprints {args.recipients}!")
+        namespace = args.Name.split('=', 1)
+        namespace[0] = namespace[0].strip()
+        name = namespace[0]
+        if len(namespace) > 1:
+            value = namespace[1]
+        else:
+            value = ''
+        if len(value) == 0:
+            # if there is no value, let's delete the key as well
+            if name in config:
+                del config[name]
+                save_config()
+        else:
+            # save the value
+            field_obj = {"enc_type": "gpg",
+                         "keys": [{"id": user_key['fingerprint'], "uids": user_key['uids']
+                                   } for user_key in gpg.list_keys() if user_key['fingerprint'] in args.recipients],
+                         "value_type": args.v_type,
+                         "enc_str": str(gpg.encrypt(value, args.recipients))}
+            config[name] = field_obj
+            save_config()
 
     elif args.cmd == 'get':
         for n in args.Name:
@@ -284,6 +334,53 @@ def main():
                     # delete the hole type dict
                     if args.type:
                         del cfg.config[KEY_TYPES][args.type]
+        save_config()
+
+    elif args.cmd in ('add-public-key', 'del-public-key'):
+        gpg = gnupg.GPG(gnupghome=os.path.join(os.environ['HOME'], ".gnupg"), keyring="pubring.kbx")
+        gpg.encoding = 'utf-8'
+        gpg_usr_s_id = [{"id": user_key['fingerprint'], "uids": user_key['uids']} for user_key in gpg.list_keys()
+                        if user_key['fingerprint'] in args.recipients]
+        if len(gpg_usr_s_id) < 1:
+            parser.error(message=f"Didn't find public keys for passed {args.recipients}!")
+
+        if args.key_name is None:
+            # process all config fields
+            for name, value in config:
+                if isinstance(value, dict) and value.get("enc_type") == "gpg":
+                    # process only gpg encrypted fields
+                    if args.cmd == 'add-public-key':
+                        for usr_id in gpg_usr_s_id:
+                            if usr_id not in value.get('keys', []):
+                                value['keys'].append(usr_id)
+                    elif args.cmd == 'del-public-key':
+                        value['keys'] = [usr_id for usr_id in value.get('keys', []) if
+                                         usr_id not in gpg_usr_s_id]
+
+                    if len(value['keys']) < 1:
+                        parser.error(message=NO_GPG_KEYS_ERROR_MSG)
+
+                    all_recipients = [recipient['id'] for recipient in value['keys']]
+                    value['enc_str'] = str(gpg.encrypt(str(gpg.decrypt(value['enc_str'])), all_recipients))
+                    config[name] = value
+        else:
+            value = config.get(args.key_name)
+            if value and isinstance(value, dict) and value.get("enc_type") == "gpg":
+                # process only gpg encrypted field
+                if args.cmd == 'add-public-key':
+                    for usr_id in gpg_usr_s_id:
+                        if usr_id not in value.get('keys', []):
+                            value['keys'].append(usr_id)
+                elif args.cmd == 'del-public-key':
+                    value['keys'] = [usr_id for usr_id in value.get('keys', []) if usr_id not in gpg_usr_s_id]
+
+                if len(value['keys']) < 1:
+                    parser.error(message=NO_GPG_KEYS_ERROR_MSG)
+
+                all_recipients = [recipient['id'] for recipient in value['keys']]
+                value["enc_str"] = str(gpg.encrypt(str(gpg.decrypt(value['enc_str'])), all_recipients))
+            else:
+                parser.exit(message="Key value cannot be empty!")
         save_config()
 
 
