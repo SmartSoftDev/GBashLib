@@ -33,6 +33,19 @@ KEY_VERSION = '~version'
 NO_GPG_KEYS_ERROR_MSG = "Could not delete all public keys, for encryption should remain at least one public key!!"
 
 
+def decrypt(value, gpg, can_decrypt):
+    gpg_head = "-----BEGIN PGP MESSAGE-----"
+    gpg_tail = "-----END PGP MESSAGE-----"
+    loc_gpg_user_id_s = gpg.list_keys()
+    field_gpg_usr_s_id = [usr_id['id'] for usr_id in value.get('keys', [])]
+    gpg_usr_s_id = [gpg_crt for gpg_crt in loc_gpg_user_id_s if
+                    gpg_crt['fingerprint'] in field_gpg_usr_s_id]
+    if len(gpg_usr_s_id) == 0 and can_decrypt:
+        raise ValueError("No gpg public keys available for decryption!")
+    enc_field_formatted = "\n".join([gpg_head, value.get("enc_str"), gpg_tail])
+    return str(gpg.decrypt(enc_field_formatted))
+
+
 def read_single_file(file_path):
     # read config file
     if not os.path.exists(file_path):
@@ -174,6 +187,7 @@ def main():
     sp.add_argument('-b', '--bash', action='store_true', default=False, help="prints it for bash interpretation")
     sp.add_argument('-r', '--recursive', type=int, default=None,
                     help="only if local is set, it will read X directories above this one and merge the values")
+    sp.add_argument('--can_decrypt', action='store_true', default=False, help="Can decrypt!")
 
     sp = subparsers.add_parser("del", help="delete one entry")
     sp.add_argument('Name', type=str, nargs="+", help='variable Name')
@@ -228,7 +242,7 @@ def main():
     else:
         read_config(None)
     # get the dict from the type
-    if hasattr(args, "type"):
+    if hasattr(args, "type") and args.type:
         if KEY_TYPES not in cfg.config:
             cfg.config[KEY_TYPES] = {}
         if args.type not in cfg.config[KEY_TYPES]:
@@ -277,14 +291,17 @@ def main():
         else:
             raise Exception("There is not value specified")
 
+        if name in config and config[name].get("enc_type"):
+            raise ValueError("Field value is already encrypted!")
+
         def get_type(val):
             tp = 'str'
             try:
-                b = float(val)
+                float(val)
                 tp = 'float'
                 if '.' not in val:
                     tp = 'int'
-            except:
+            except ValueError:
                 pass
             return tp
 
@@ -320,6 +337,9 @@ def main():
                 print(config[name])
 
     elif args.cmd == 'list':
+        gpg = gnupg.GPG(gnupghome=os.path.join(os.environ['HOME'], ".gnupg"), verbose=args.verbose > 0,
+                        keyring="pubring.kbx")
+        gpg.encoding = 'utf-8'
         if sys.stdout.isatty():
             args.decorate = True
         if cfg.env_name:
@@ -329,18 +349,24 @@ def main():
             for k, v in cfg.config.items():
                 if k == KEY_TYPES:
                     continue
+                if isinstance(v, dict) and v.get("enc_type") == "gpg":
+                    v = decrypt(v, gpg, args.can_decrypt)
                 print_one(cfg, k, v)
             if KEY_TYPES in cfg.config:
+                import pdb; pdb.set_trace()
                 for type_name, tip in cfg.config[KEY_TYPES].items():
                     if not args.bash:
                         print("%s:" % (type_name,))
                     for name, value in tip.items():
+                        if isinstance(value, dict) and value.get("enc_type") == "gpg":
+                            value = decrypt(value, gpg, args.can_decrypt)
                         print_one(cfg, name, value, type_name)
-
         else:
             for name, value in config.items():
                 if name in (KEY_TYPES, KEY_VERSION):
                     continue
+                if isinstance(value, dict) and value.get("enc_type") == "gpg":
+                    value = decrypt(value, gpg, args.can_decrypt)
                 print_one(cfg, name, value, args.type)
     elif args.cmd == 'drop':
         os.remove(cfg.dbPath)
