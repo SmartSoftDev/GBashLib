@@ -125,6 +125,7 @@ def print_one(cfg, name, value, type_name=None, last=False):
 
 def main():
     parser = argparse.ArgumentParser(description="Variable storage for bash")
+    parser.add_argument('-v', '--verbose', action='count', default=0, help='Enable debugging')
     parser.add_argument("-l", "--local", default=False, action='store_true', help="User ./v.yaml instead of ~/.v.yaml")
     parser.add_argument("-e", "--env_name", default=None, type=str,
                         help="Multi-Env Name to load (specifies the prefix for yaml file."
@@ -159,8 +160,7 @@ def main():
     sp = subparsers.add_parser("enc", help="manipulate ws/pkg evn: add new gpg encrypted entry "
                                            "to uid with name uid_name ")
     sp.set_defaults(cmd="enc")
-    sp.add_argument('Name', type=str, help='variable Name. Ex:"test_var=1234"')
-    sp.add_argument('v_type', type=str, help='variable type.', choices=["str", "int", "float"])
+    sp.add_argument('value', type=str, help='variable name=value. Ex:"test_var=1234"')
     sp.add_argument('recipients', type=str, nargs="+", help='PGP users fingerprints|IDs')
 
     sp = subparsers.add_parser("list", help="Print all values")
@@ -262,33 +262,52 @@ def main():
                 save_config()
 
     elif args.cmd == 'enc':
-        gpg = gnupg.GPG(gnupghome=os.path.join(os.environ['HOME'], ".gnupg"), keyring="pubring.kbx")
+        gpg = gnupg.GPG(gnupghome=os.path.join(os.environ['HOME'], ".gnupg"), keyring="pubring.kbx",
+                        verbose=args.verbose > 0)
         gpg.encoding = 'utf-8'
         gpg_usr_s_id = [{"id": user_key['fingerprint'], "uids": user_key['uids']} for user_key in gpg.list_keys()
                         if user_key['fingerprint'] in args.recipients]
         if len(gpg_usr_s_id) < 1:
             parser.error(message=f"Didn't find public keys for passed fingerprints {args.recipients}!")
-        namespace = args.Name.split('=', 1)
+        namespace = args.value.split('=', 1)
         namespace[0] = namespace[0].strip()
         name = namespace[0]
         if len(namespace) > 1:
             value = namespace[1]
         else:
-            value = ''
-        if len(value) == 0:
-            # if there is no value, let's delete the key as well
-            if name in config:
-                del config[name]
-                save_config()
-        else:
-            # save the value
-            field_obj = {"enc_type": "gpg",
-                         "keys": [{"id": user_key['fingerprint'], "uids": user_key['uids']
-                                   } for user_key in gpg.list_keys() if user_key['fingerprint'] in args.recipients],
-                         "value_type": args.v_type,
-                         "enc_str": str(gpg.encrypt(value, args.recipients))}
-            config[name] = field_obj
-            save_config()
+            raise Exception("There is not value specified")
+
+        def get_type(val):
+            tp = 'str'
+            try:
+                b = float(val)
+                tp = 'float'
+                if '.' not in val:
+                    tp = 'int'
+            except:
+                pass
+            return tp
+
+        # save the value
+        enc_str = str(gpg.encrypt(value, args.recipients))
+        if len(enc_str) == 0:
+            raise Exception("Could not encrypt the value")
+        ret = ''
+        for line in enc_str.split('\n'):
+            line = line.strip()
+            if len(line) == 0:
+                continue
+            if line.startswith('-----'):
+                continue
+            ret += line
+        enc_str = ret
+        field_obj = {"enc_type": "gpg",
+                     "keys": [{"id": user_key['fingerprint'], "uids": user_key['uids']
+                               } for user_key in gpg.list_keys() if user_key['fingerprint'] in args.recipients],
+                     "value_type": get_type(value),
+                     "enc_str": enc_str}
+        config[name] = field_obj
+        save_config()
 
     elif args.cmd == 'get':
         for n in args.Name:
