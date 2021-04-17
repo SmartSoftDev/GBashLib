@@ -9,7 +9,6 @@ recursively)
 * can switch file_name from v.yaml to v.{NAME}.yaml depending of argument or environ variable
 * can store KEY=VALUE pairs, or KEY=VALUE in a special "TYPE" (group)
 
-TODO: support encryption / decryption on the fly.
 """
 import os
 import argparse
@@ -33,14 +32,14 @@ KEY_VERSION = '~version'
 NO_GPG_KEYS_ERROR_MSG = "Could not delete all public keys, for encryption should remain at least one public key!!"
 
 
-def decrypt(value, gpg, can_decrypt):
+def decrypt(value, gpg, skip_cannot_decrypt):
     gpg_head = "-----BEGIN PGP MESSAGE-----"
     gpg_tail = "-----END PGP MESSAGE-----"
     loc_gpg_user_id_s = gpg.list_keys()
     field_gpg_usr_s_id = [usr_id['id'] for usr_id in value.get('keys', [])]
     gpg_usr_s_id = [gpg_crt for gpg_crt in loc_gpg_user_id_s if
                     gpg_crt['fingerprint'] in field_gpg_usr_s_id]
-    if len(gpg_usr_s_id) == 0 and can_decrypt:
+    if len(gpg_usr_s_id) == 0 and not skip_cannot_decrypt:
         raise ValueError("No gpg public keys available for decryption!")
     enc_field_formatted = "\n".join([gpg_head, value.get("enc_str"), gpg_tail])
     return str(gpg.decrypt(enc_field_formatted))
@@ -187,7 +186,8 @@ def main():
     sp.add_argument('-b', '--bash', action='store_true', default=False, help="prints it for bash interpretation")
     sp.add_argument('-r', '--recursive', type=int, default=None,
                     help="only if local is set, it will read X directories above this one and merge the values")
-    sp.add_argument('--can_decrypt', action='store_true', default=False, help="Can decrypt!")
+    sp.add_argument('-S', '--skip_cannot_decrypt', action='store_true', default=False,
+                    help="Skip fields which cannot be decrypted")
 
     sp = subparsers.add_parser("del", help="delete one entry")
     sp.add_argument('Name', type=str, nargs="+", help='variable Name')
@@ -198,13 +198,13 @@ def main():
     sp = subparsers.add_parser("drop", help="Delete hole DB")
     sp.set_defaults(cmd="drop")
 
-    sp = subparsers.add_parser("add-public-key", help="Add pub key")
-    sp.set_defaults(cmd="add-public-key")
+    sp = subparsers.add_parser("add-user-key", help="Add pgp user key")
+    sp.set_defaults(cmd="add-user-key")
     sp.add_argument("-k", "--key-name", type=str, default=None, help='key Name. Ex:"test_key"')
     sp.add_argument('recipients', type=str, nargs="+", help='PGP users fingerprints|IDs')
 
-    sp = subparsers.add_parser("del-public-key", help="Delete pub key")
-    sp.set_defaults(cmd="del-public-key")
+    sp = subparsers.add_parser("del-user-key", help="Delete pgp user key")
+    sp.set_defaults(cmd="del-user-key")
     sp.add_argument("-k", "--key-name", type=str, default=None, help='variable Name. Ex:"test_key"')
     sp.add_argument('recipients', type=str, nargs="+", help='PGP users fingerprints|IDs')
 
@@ -350,23 +350,37 @@ def main():
                 if k == KEY_TYPES:
                     continue
                 if isinstance(v, dict) and v.get("enc_type") == "gpg":
-                    v = decrypt(v, gpg, args.can_decrypt)
+                    v = decrypt(v, gpg, args.skip_cannot_decrypt)
+                    if len(v) == 0:
+                        if not args.skip_cannot_decrypt:
+                            raise ValueError(f"Could not decrypt {k=} {v=}")
+                        else:
+                            v = '<CANNOT DECRYPT>'
                 print_one(cfg, k, v)
             if KEY_TYPES in cfg.config:
-                import pdb; pdb.set_trace()
                 for type_name, tip in cfg.config[KEY_TYPES].items():
                     if not args.bash:
                         print("%s:" % (type_name,))
                     for name, value in tip.items():
                         if isinstance(value, dict) and value.get("enc_type") == "gpg":
-                            value = decrypt(value, gpg, args.can_decrypt)
+                            value = decrypt(value, gpg, args.skip_cannot_decrypt)
+                            if len(value) == 0:
+                                if not args.skip_cannot_decrypt:
+                                    raise ValueError(f"Could not decrypt {name=} {value=}")
+                                else:
+                                    value = '<CANNOT DECRYPT>'
                         print_one(cfg, name, value, type_name)
         else:
             for name, value in config.items():
                 if name in (KEY_TYPES, KEY_VERSION):
                     continue
                 if isinstance(value, dict) and value.get("enc_type") == "gpg":
-                    value = decrypt(value, gpg, args.can_decrypt)
+                    value = decrypt(value, gpg, args.skip_cannot_decrypt)
+                    if len(value) == 0:
+                        if not args.skip_cannot_decrypt:
+                            raise ValueError(f"Could not decrypt {name=} {value=}")
+                        else:
+                            value = '<CANNOT DECRYPT>'
                 print_one(cfg, name, value, args.type)
     elif args.cmd == 'drop':
         os.remove(cfg.dbPath)
@@ -381,26 +395,34 @@ def main():
                         del cfg.config[KEY_TYPES][args.type]
         save_config()
 
-    elif args.cmd in ('add-public-key', 'del-public-key'):
+    elif args.cmd in ('add-user-key', 'del-user-key'):
         gpg = gnupg.GPG(gnupghome=os.path.join(os.environ['HOME'], ".gnupg"), keyring="pubring.kbx")
         gpg.encoding = 'utf-8'
-        gpg_usr_s_id = [{"id": user_key['fingerprint'], "uids": user_key['uids']} for user_key in gpg.list_keys()
+        gpg_key_list = gpg.list_keys()
+        # we check that requested add/del keys exist in pgp
+        gpg_usr_s_id = [{"id": user_key['fingerprint'], "uids": user_key['uids']} for user_key in gpg_key_list
                         if user_key['fingerprint'] in args.recipients]
-        if len(gpg_usr_s_id) < 1:
-            parser.error(message=f"Didn't find public keys for passed {args.recipients}!")
+        if len(gpg_usr_s_id) != len(args.recipients):
+            parser.error(message=f"Didn't find user keys ({len(gpg_usr_s_id)} out of {len(args.recipients)})"
+                                 f" for passed {args.recipients}!")
 
         if args.key_name is None:
-            # process all config fields
+            # process all config encrypted fields
             for name, value in config:
+                # process only gpg encrypted fields
                 if isinstance(value, dict) and value.get("enc_type") == "gpg":
-                    # process only gpg encrypted fields
-                    if args.cmd == 'add-public-key':
+                    # let's check if all the keys are present
+                    value_keys = value.get('keys')
+                    found_keys = [user_key for user_key in gpg_key_list if user_key['fingerprint'] in value_keys]
+                    if len(value_keys) != len(found_keys):
+                        parser.error(message=f"Could not find all ({len(found_keys)} of {len(value_keys)}) keys "
+                                             f"to re/encrypt {name=}")
+                    if args.cmd == 'add-user-key':
                         for usr_id in gpg_usr_s_id:
-                            if usr_id not in value.get('keys', []):
+                            if usr_id not in value_keys:
                                 value['keys'].append(usr_id)
-                    elif args.cmd == 'del-public-key':
-                        value['keys'] = [usr_id for usr_id in value.get('keys', []) if
-                                         usr_id not in gpg_usr_s_id]
+                    elif args.cmd == 'del-user-key':
+                        value['keys'] = [usr_id for usr_id in value.get('keys', []) if usr_id not in gpg_usr_s_id]
 
                     if len(value['keys']) < 1:
                         parser.error(message=NO_GPG_KEYS_ERROR_MSG)
@@ -409,14 +431,23 @@ def main():
                     value['enc_str'] = str(gpg.encrypt(str(gpg.decrypt(value['enc_str'])), all_recipients))
                     config[name] = value
         else:
-            value = config.get(args.key_name)
+            # only one field
+            name = args.key_name
+            value = config.get(name)
+            # process only gpg encrypted field
             if value and isinstance(value, dict) and value.get("enc_type") == "gpg":
-                # process only gpg encrypted field
-                if args.cmd == 'add-public-key':
+                # check if all keys are present
+                value_keys = value.get('keys')
+                found_keys = [user_key for user_key in gpg_key_list if user_key['fingerprint'] in value_keys]
+                if len(value_keys) != len(found_keys):
+                    parser.error(message=f"Could not find all ({len(found_keys)} of {len(value_keys)}) keys "
+                                         f"to re/encrypt {name=}")
+
+                if args.cmd == 'add-user-key':
                     for usr_id in gpg_usr_s_id:
                         if usr_id not in value.get('keys', []):
                             value['keys'].append(usr_id)
-                elif args.cmd == 'del-public-key':
+                elif args.cmd == 'del-user-key':
                     value['keys'] = [usr_id for usr_id in value.get('keys', []) if usr_id not in gpg_usr_s_id]
 
                 if len(value['keys']) < 1:
