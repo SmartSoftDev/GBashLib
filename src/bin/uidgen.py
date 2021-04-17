@@ -13,7 +13,7 @@ import shutil
 import sys
 
 
-class config(object):
+class Config:
     def __init__(self):
         self.dir = "/tmp/uidgen/"
         self.uid_name = ""
@@ -23,7 +23,7 @@ class config(object):
         self.limit = 0
 
 
-cfg = config()
+cfg = Config()
 
 import hashlib
 
@@ -85,10 +85,9 @@ def main(args):
 
     if cfg.cmd == "create":
         if not cfg.silent:
-            print("create " + cfg.uid_name)
+            print(f"create {cfg.uid_name}")
         if os.path.exists(cfg.uid_file):
-            print("You are trying to create a uid but it exists already! uid_name="
-                  + cfg.uid_name+"uid_file=" + cfg.uid_file)
+            print(f"You are trying to create a uid but it exists already! {cfg.uid_name=} {cfg.uid_file=}")
         with open(cfg.uid_file, "w+") as _:
             pass
     elif cfg.cmd == "get":
@@ -101,18 +100,18 @@ def main(args):
     elif cfg.cmd == "add":
         if args.files:
             with open(cfg.uid_file, "a") as f:
-                for fname in args.entry:
-                    with open(fname, 'rb') as fin:
-                        hashSum = hashfile(fin, hashlib.sha256())
+                for f_name in args.entry:
+                    with open(f_name, 'rb') as fin:
+                        hash_sum = hashfile(fin, hashlib.sha256())
                     if not cfg.silent:
-                        print("%s add file %s" % (cfg.uid_name, fname))
-                    f.write("%s %s\n" % (fname, hashSum))
+                        print("%s add file %s" % (cfg.uid_name, f_name))
+                    f.write("%s %s\n" % (f_name, hash_sum))
         else:
             with open(cfg.uid_file, "a") as f:
                 for s in args.entry:
                     if not cfg.silent:
                         print("%s add %s" % (cfg.uid_name, s))
-                    f.write(s+"\n")
+                    f.write(f"{s}\n")
 
 
 if __name__ == '__main__':

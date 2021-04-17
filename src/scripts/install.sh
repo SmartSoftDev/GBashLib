@@ -13,6 +13,6 @@ sudo ln -sf $DIR/gbl.sh /bin/gbl
 tpl -i $DIR/tpls/bashrc.tpl -r -o $HOME/.bashrc -v BASHRC_INC=$DIR/gbl_bashrc.inc.sh
 sudo tpl -i $DIR/tpls/bashrc.tpl -r -o /root/.bashrc -v BASHRC_INC=$DIR/gbl_bashrc.inc.sh
 sudo -H apt install -y python3 python3-pip
-sudo -H pip3 install --upgrade pyyaml tabulate
+sudo -H pip3 install --upgrade pyyaml tabulate python-gnupg
 
 export G_BASH_LIB=$DIR

@@ -2,8 +2,9 @@
 import argparse
 import os
 import sys
+from types import SimpleNamespace
 
-cfg = lambda: None
+cfg = SimpleNamespace()
 
 
 def process_line(fi_line):
@@ -71,7 +72,7 @@ def main():
         cfg.fi = sys.stdin
     else:
         cfg.fi = open(cfg.args.input, "r")
-    # read the input file (tempalte)
+    # read the input file (template)
     count = 0
     repl_id = ''
     while True:
