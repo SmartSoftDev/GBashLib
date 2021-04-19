@@ -32,13 +32,16 @@ KEY_VERSION = '~version'
 NO_GPG_KEYS_ERROR_MSG = "Could not delete all public keys, for encryption should remain at least one public key!!"
 
 
-def decrypt(value, gpg, skip_cannot_decrypt):
+def _decrypt(value, gpg, skip_cannot_decrypt):
     loc_gpg_user_id_s = gpg.list_keys()
     field_gpg_usr_s_id = [usr_id['id'] for usr_id in value.get('keys', [])]
     gpg_usr_s_id = [gpg_crt for gpg_crt in loc_gpg_user_id_s if
                     gpg_crt['fingerprint'] in field_gpg_usr_s_id]
-    if len(gpg_usr_s_id) == 0 and not skip_cannot_decrypt:
-        raise ValueError("No gpg public keys available for decryption!")
+    if len(gpg_usr_s_id) == 0:
+        if skip_cannot_decrypt:
+            return ""
+        else:
+            raise ValueError("No gpg public keys available for decryption!")
     enc_field_formatted = "-----BEGIN PGP MESSAGE-----\n\n" + value.get("enc_str") + "\n-----END PGP MESSAGE-----\n"
     return str(gpg.decrypt(enc_field_formatted))
 
@@ -352,7 +355,7 @@ def main():
                 if k == KEY_TYPES:
                     continue
                 if isinstance(v, dict) and v.get("enc_type") == "gpg":
-                    v = decrypt(v, gpg, args.skip_cannot_decrypt)
+                    v = _decrypt(v, gpg, args.skip_cannot_decrypt)
                     if len(v) == 0:
                         if not args.skip_cannot_decrypt:
                             raise ValueError(f"Could not decrypt {k=} {v=}")
@@ -365,7 +368,7 @@ def main():
                         print("%s:" % (type_name,))
                     for name, value in tip.items():
                         if isinstance(value, dict) and value.get("enc_type") == "gpg":
-                            value = decrypt(value, gpg, args.skip_cannot_decrypt)
+                            value = _decrypt(value, gpg, args.skip_cannot_decrypt)
                             if len(value) == 0:
                                 if not args.skip_cannot_decrypt:
                                     raise ValueError(f"Could not decrypt {name=} {value=}")
@@ -377,7 +380,7 @@ def main():
                 if name in (KEY_TYPES, KEY_VERSION):
                     continue
                 if isinstance(value, dict) and value.get("enc_type") == "gpg":
-                    value = decrypt(value, gpg, args.skip_cannot_decrypt)
+                    value = _decrypt(value, gpg, args.skip_cannot_decrypt)
                     if len(value) == 0:
                         if not args.skip_cannot_decrypt:
                             raise ValueError(f"Could not decrypt {name=} {value=}")
@@ -410,7 +413,7 @@ def main():
 
         if args.key_name is None:
             # process all config encrypted fields
-            for name, value in config:
+            for name, value in config.items():
                 # process only gpg encrypted fields
                 if isinstance(value, dict) and value.get("enc_type") == "gpg":
                     # let's check if all the keys are present
@@ -433,7 +436,7 @@ def main():
 
                     all_recipients = [recipient['id'] for recipient in value['keys']]
                     value['enc_str'] = _format_gpg_enc_str(
-                        str(gpg.encrypt(str(gpg.decrypt(value['enc_str'])), all_recipients)))
+                        str(gpg.encrypt(str(_decrypt(value, gpg, False)), all_recipients)))
                     config[name] = value
         else:
             # only one field
@@ -463,7 +466,7 @@ def main():
 
                 all_recipients = [recipient['id'] for recipient in value['keys']]
                 value["enc_str"] = _format_gpg_enc_str(
-                    str(gpg.encrypt(str(gpg.decrypt(value['enc_str'])), all_recipients)))
+                    str(gpg.encrypt(str(_decrypt(value, gpg, False)), all_recipients)))
             else:
                 parser.exit(message="Key value cannot be empty!")
         save_config()
