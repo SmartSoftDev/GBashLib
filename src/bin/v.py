@@ -15,8 +15,6 @@ import argparse
 import sys
 import yaml
 
-import gnupg
-
 from types import SimpleNamespace
 
 # Bash (terminal) colors
@@ -31,12 +29,24 @@ KEY_TYPES = '~types'
 KEY_VERSION = '~version'
 NO_GPG_KEYS_ERROR_MSG = "Could not delete all public keys, for encryption should remain at least one public key!!"
 
+_gnupg = None
 
-def _decrypt(value, gpg, skip_cannot_decrypt):
+
+def _init_gpg(verbose=None):
+    global _gnupg
+    if _gnupg is None:
+        import gnupg
+        _gnupg = gnupg.GPG(verbose=verbose)
+        _gnupg.encoding = 'utf-8'
+
+    return _gnupg
+
+
+def _decrypt(value, skip_cannot_decrypt):
+    gpg = _init_gpg()
     loc_gpg_user_id_s = gpg.list_keys()
     field_gpg_usr_s_id = [usr_id['id'] for usr_id in value.get('keys', [])]
-    gpg_usr_s_id = [gpg_crt for gpg_crt in loc_gpg_user_id_s if
-                    gpg_crt['fingerprint'] in field_gpg_usr_s_id]
+    gpg_usr_s_id = [gpg_crt for gpg_crt in loc_gpg_user_id_s if gpg_crt['fingerprint'] in field_gpg_usr_s_id]
     if len(gpg_usr_s_id) == 0:
         if skip_cannot_decrypt:
             return ""
@@ -289,9 +299,8 @@ def main():
                 save_config()
 
     elif args.cmd == 'enc':
-        gpg = gnupg.GPG(gnupghome=os.path.join(os.environ['HOME'], ".gnupg"),
-                        verbose=args.verbose > 0)
-        gpg.encoding = 'utf-8'
+        gpg = _init_gpg(args.verbose > 0)
+
         gpg_usr_s_id = [{"id": user_key['fingerprint'], "uids": user_key['uids']} for user_key in gpg.list_keys()
                         if user_key['fingerprint'] in args.recipients]
         if len(gpg_usr_s_id) < 1:
@@ -343,19 +352,20 @@ def main():
                 print(config[name])
 
     elif args.cmd == 'list':
-        gpg = gnupg.GPG(gnupghome=os.path.join(os.environ['HOME'], ".gnupg"), verbose=args.verbose > 0)
-        gpg.encoding = 'utf-8'
         if sys.stdout.isatty():
             args.decorate = True
         if cfg.env_name:
             print_one(cfg, 'V_ENV_NAME', cfg.env_name)
 
         if args.all:
+            gpg = None
             for k, v in cfg.config.items():
                 if k == KEY_TYPES:
                     continue
                 if isinstance(v, dict) and v.get("enc_type") == "gpg":
-                    v = _decrypt(v, gpg, args.skip_cannot_decrypt)
+                    if gpg is None:
+                        gpg = _init_gpg(args.verbose > 0)
+                    v = _decrypt(v, args.skip_cannot_decrypt)
                     if len(v) == 0:
                         if not args.skip_cannot_decrypt:
                             raise ValueError(f"Could not decrypt {k=} {v=}")
@@ -368,7 +378,7 @@ def main():
                         print("%s:" % (type_name,))
                     for name, value in tip.items():
                         if isinstance(value, dict) and value.get("enc_type") == "gpg":
-                            value = _decrypt(value, gpg, args.skip_cannot_decrypt)
+                            value = _decrypt(value, args.skip_cannot_decrypt)
                             if len(value) == 0:
                                 if not args.skip_cannot_decrypt:
                                     raise ValueError(f"Could not decrypt {name=} {value=}")
@@ -380,7 +390,7 @@ def main():
                 if name in (KEY_TYPES, KEY_VERSION):
                     continue
                 if isinstance(value, dict) and value.get("enc_type") == "gpg":
-                    value = _decrypt(value, gpg, args.skip_cannot_decrypt)
+                    value = _decrypt(value, args.skip_cannot_decrypt)
                     if len(value) == 0:
                         if not args.skip_cannot_decrypt:
                             raise ValueError(f"Could not decrypt {name=} {value=}")
@@ -401,8 +411,8 @@ def main():
         save_config()
 
     elif args.cmd in ('add-user-key', 'del-user-key'):
-        gpg = gnupg.GPG(gnupghome=os.path.join(os.environ['HOME'], ".gnupg"))
-        gpg.encoding = 'utf-8'
+        gpg = _init_gpg(args.verbose > 0)
+
         gpg_key_list = gpg.list_keys()
         # we check that requested add/del keys exist in pgp
         gpg_usr_s_id = [{"id": user_key['fingerprint'], "uids": user_key['uids']} for user_key in gpg_key_list
@@ -436,7 +446,7 @@ def main():
 
                     all_recipients = [recipient['id'] for recipient in value['keys']]
                     value['enc_str'] = _format_gpg_enc_str(
-                        str(gpg.encrypt(str(_decrypt(value, gpg, False)), all_recipients)))
+                        str(gpg.encrypt(str(_decrypt(value, False)), all_recipients)))
                     config[name] = value
         else:
             # only one field
@@ -466,7 +476,7 @@ def main():
 
                 all_recipients = [recipient['id'] for recipient in value['keys']]
                 value["enc_str"] = _format_gpg_enc_str(
-                    str(gpg.encrypt(str(_decrypt(value, gpg, False)), all_recipients)))
+                    str(gpg.encrypt(str(_decrypt(value, False)), all_recipients)))
             else:
                 parser.exit(message="Key value cannot be empty!")
         save_config()
