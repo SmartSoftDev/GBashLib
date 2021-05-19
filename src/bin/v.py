@@ -14,7 +14,7 @@ import os
 import argparse
 import sys
 import yaml
-
+import uuid
 from types import SimpleNamespace
 
 # Bash (terminal) colors
@@ -195,6 +195,8 @@ def main():
     sp = subparsers.add_parser("enc", help="manipulate ws/pkg evn: add new gpg encrypted entry "
                                            "to uid with name uid_name ")
     sp.set_defaults(cmd="enc")
+    sp.add_argument('-r','--random', action='store_true', default=False, help='Generate random string value using uuid4() ')
+
     sp.add_argument('value', type=str, help='variable name=value. Ex:"test_var=1234"')
     sp.add_argument('recipients', type=str, nargs="+", help='PGP users fingerprints|IDs')
 
@@ -311,7 +313,10 @@ def main():
         if len(namespace) > 1:
             value = namespace[1]
         else:
-            raise Exception("There is not value specified")
+            if args.random:
+                value = uuid.uuid4().hex
+            else:
+                raise Exception("There is not value specified")
 
         if name in config:
             raise ValueError("Field value is already Exists! if you want to reEncrypt run v add-user-key or v del-user-key")
