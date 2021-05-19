@@ -313,8 +313,8 @@ def main():
         else:
             raise Exception("There is not value specified")
 
-        if name in config and config[name].get("enc_type"):
-            raise ValueError("Field value is already encrypted!")
+        if name in config:
+            raise ValueError("Field value is already Exists! if you want to reEncrypt run v add-user-key or v del-user-key")
 
         def get_type(val):
             tp = 'str'
