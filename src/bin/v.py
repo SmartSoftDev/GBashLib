@@ -27,6 +27,7 @@ cfg = SimpleNamespace()  # singleton
 cfg.env_name = None  # means no special MULTI-ENV name was given.
 KEY_TYPES = '~types'
 KEY_VERSION = '~version'
+KEY_INCLUDE = '~include'
 NO_GPG_KEYS_ERROR_MSG = "Could not delete all public keys, for encryption should remain at least one public key!!"
 
 _gnupg = None
@@ -104,12 +105,14 @@ def read_config(recursive):
         cfg.config = read_single_file(cfg.dbPath)
     else:
         if recursive == 0:
-            recursive = 999
+            recursive = 99
         config = {}
         file_path = cfg.dbPath
         dir_path = cfg.path
-        for i in range(recursive):
-            config.update(read_single_file(file_path))
+        for i in range(recursive+1):  # +1 because 1 is for current directory
+            new_config = read_single_file(file_path)
+            new_config.update(config)
+            config = new_config  # we need that deeper changes override then one in previous directory
             if dir_path == '/':
                 break  # reached the end
             dir_path = os.path.dirname(dir_path)
@@ -364,7 +367,8 @@ def main():
 
         if args.all:
             gpg = None
-            for k, v in cfg.config.items():
+            for k in sorted(cfg.config.keys()):
+                v = cfg.config[k]
                 if k == KEY_TYPES:
                     continue
                 if isinstance(v, dict) and v.get("enc_type") == "gpg":
@@ -381,7 +385,8 @@ def main():
                 for type_name, tip in cfg.config[KEY_TYPES].items():
                     if not args.bash:
                         print("%s:" % (type_name,))
-                    for name, value in tip.items():
+                    for name in sorted(tip.keys()):
+                        value = tip[name]
                         if isinstance(value, dict) and value.get("enc_type") == "gpg":
                             value = _decrypt(value, args.skip_cannot_decrypt)
                             if len(value) == 0:
@@ -391,7 +396,8 @@ def main():
                                     value = '<CANNOT DECRYPT>'
                         print_one(cfg, name, value, type_name)
         else:
-            for name, value in config.items():
+            for name in sorted(config.keys()):
+                value = config[name]
                 if name in (KEY_TYPES, KEY_VERSION):
                     continue
                 if isinstance(value, dict) and value.get("enc_type") == "gpg":
