@@ -16,19 +16,19 @@ function pg_create_user_and_database(){
 	local user="$1"
 	local password="$2"
 	local database="$3"
-	sudo -u postgres psql -c  "CREATE DATABASE $database;"
+	sudo -u postgres psql -c  "CREATE DATABASE \"$database\";"
 	sudo -u postgres psql -c  "\
-		CREATE USER $user WITH PASSWORD '$password'; \
-		GRANT ALL PRIVILEGES ON DATABASE $database to $user;"
+		CREATE USER \"$user\" WITH PASSWORD '$password'; \
+		GRANT ALL PRIVILEGES ON DATABASE \"$database\" to \"$user\";"
 	sudo -u postgres psql $database -c  "\
-        GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA PUBLIC TO $user WITH GRANT OPTION;\
-        GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA PUBLIC TO $user WITH GRANT OPTION;" 
+        GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA PUBLIC TO \"$user\" WITH GRANT OPTION;\
+        GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA PUBLIC TO \"$user\" WITH GRANT OPTION;"
 }
 
 function pg_drop_user(){
 	local user="$1"
 	sudo -u postgres psql -c  "\
-		DROP USER $user;" 
+		DROP USER \"$user\";"
 }
 
 function pg_drop_database(){
