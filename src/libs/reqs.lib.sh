@@ -16,8 +16,8 @@ function reqs_find(){
 }
 
 function reqs_build_one(){
-	local path=$1
-	local target=$SPHINX_DEFAULT_TARGET
+	local path="$1"
+	local target="$SPHINX_DEFAULT_TARGET"
 	if [ "$2" != "" ] ; then
 		target="$2"
 	fi
@@ -26,14 +26,14 @@ function reqs_build_one(){
 	echo "Start building document $path"
 	for pfile in $(find -L $path -name "*.puml" -type f) ; do
 		if [ "$pfile" -nt "$pfile.png" ] ;then
-			java -jar $puml_exec $pfile || { echo "failed to convert PUML to PNG: '$pfile'" ; return 1 ; }
-			mv "${pfile:0:(-5)}.png" $pfile.png
+			java -jar "$puml_exec" "$pfile" || { echo "failed to convert PUML to PNG: '$pfile'" ; return 1 ; }
+			mv "${pfile:0:(-5)}.png" "$pfile.png"
 			echo "Converted puml file: $pfile.png"
 		else
 			echo "$pfile.png already up to date"
 		fi
 	done
-	$SPHINXBUILD -M $target $path ${path}_build ${SPHINXOPTS}
+	$SPHINXBUILD -M "$target" "$path" "${path}_build" "${SPHINXOPTS}"
 }
 
 function reqs_build(){
@@ -56,8 +56,8 @@ function reqs_show_all_singlehtml(){
 	reqs_find
 	local browser_files=""
 	for path in ${REQS[@]} ; do
-		if [ ! -d ${path}_build ] ; then
-			reqs_build_one $path $target
+		if [ ! -d "${path}_build" ] ; then
+			reqs_build_one "$path" "$target"
 		fi
 		browser_files="$browser_files ${path}_build/$SPHINX_DEFAULT_TARGET/index.html"
 	done
@@ -65,7 +65,7 @@ function reqs_show_all_singlehtml(){
 		$browser $browser_files
 	else
 		for i in $browser_files ; do
-			echo $(readlink -e $i)
+			echo $(readlink -e "$i")
 		done
 	fi
 }

@@ -12,15 +12,15 @@ gblcmd_ctl(){
     fi
 
     local arg="$1"
-    if [ $1 == "st" ] ; then
+    if [ "$1" == "st" ] ; then
         arg="status"
-    elif [ $1 == "start" ] ; then
+    elif [ "$1" == "start" ] ; then
         arg="start"
-    elif [ $1 == "stop" ] ; then
+    elif [ "$1" == "stop" ] ; then
         arg="stop"
-    elif [ $1 == "restart" ] ; then
+    elif [ "$1" == "restart" ] ; then
         arg="restart"
-    elif [ $1 == "list" ] ; then
+    elif [ "$1" == "list" ] ; then
         v list -t systemd -v
         return
     else
@@ -31,7 +31,7 @@ gblcmd_ctl(){
         what="$what $i"
     done
     log "cmd: $arg services: ${services[@]}"
-    sudo systemctl $arg $what
+    sudo systemctl "$arg" $what
 }
 
 _log_get_what(){

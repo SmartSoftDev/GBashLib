@@ -8,12 +8,12 @@ function _uidgen_compute_values(){
     local uidgen_id=uidgen_check_if_files_changed
 	#first compute the ID of the files
 	uidgen -s $uidgen_id create
-	for i in $@ ; do 
+	for i in "$@" ; do
 		uidgen -s $uidgen_id add $i
 	done
 	_UIDGEN_VALUE_ID=$(uidgen $uidgen_id get -l 10)
 	uidgen -s $uidgen_id create
-	for i in $@ ; do 
+	for i in "$@" ; do
 		uidgen -s $uidgen_id add -f $i
 	done
 	_UIDGEN_NEW_HASH=$(uidgen $uidgen_id get -l 10)
@@ -35,5 +35,5 @@ function uidgen_check_if_files_changed(){
 uidgen_save_files_changed_descr="saves the current file hashes to v"
 function uidgen_save_files_changed(){
     _uidgen_compute_values $@
-    v set -t uidgen_check_changes ${_UIDGEN_VALUE_ID}=${_UIDGEN_NEW_HASH}
+    v set -t uidgen_check_changes "${_UIDGEN_VALUE_ID}=${_UIDGEN_NEW_HASH}"
 }

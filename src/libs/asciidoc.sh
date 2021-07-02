@@ -10,11 +10,11 @@ function build_one_asciidoc(){
 	if [ "$otype" == "html" ] ; then
 		otype='html5'
 		asciidoc --theme=volnitsky -a toc2 -a revnumber="$ADOC_REVISION" -a revdate="$ADOC_DATE" -a source-highlighter=pygments \
-    		-a data-uri -a icons -o "$odir/$adoc.html" -b $otype "$adoc"
+    		-a data-uri -a icons -o "$odir/$adoc.html" -b "$otype" "$adoc"
 		
 	elif [ "$otype" == "pdf" ] ; then
 		a2x --asciidoc-opts '--theme=volnitsky' -L -a toc2 -a revnumber="$ADOC_REVISION" -a revdate="$ADOC_DATE" -a source-highlighter=pygments \
-    		-a data-uri -a icons -f pdf "$adoc" -D $odir
+    		-a data-uri -a icons -f pdf "$adoc" -D "$odir"
 	fi
 	
 }
