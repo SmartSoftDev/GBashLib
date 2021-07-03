@@ -12,23 +12,40 @@ function pg_database_exists(){
 	fi
 }
 
+function pg_user_exists(){
+	local user="$1"
+	if ! sudo -u postgres psql -A -t -c "SELECT 1 FROM pg_roles WHERE rolname='$user'" \
+	| grep -e "^${database}$" >/dev/null 2>/dev/null ; then
+		return 1
+	else
+		return 0
+	fi
+}
+
 function pg_create_user_and_database(){
 	local user="$1"
 	local password="$2"
 	local database="$3"
-	sudo -u postgres psql -c  "CREATE DATABASE $database;"
+	sudo -u postgres psql -c  "CREATE DATABASE \"$database\";"
 	sudo -u postgres psql -c  "\
-		CREATE USER $user WITH PASSWORD '$password'; \
-		GRANT ALL PRIVILEGES ON DATABASE $database to $user;"
-	sudo -u postgres psql $database -c  "\
-        GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA PUBLIC TO $user WITH GRANT OPTION;\
-        GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA PUBLIC TO $user WITH GRANT OPTION;" 
+		CREATE USER \"$user\" WITH PASSWORD \"$password\"; \
+		GRANT ALL PRIVILEGES ON DATABASE \"$database\" to \"$user\";"
+	sudo -u postgres psql "$database" -c  "\
+        GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA PUBLIC TO \"$user\" WITH GRANT OPTION;\
+        GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA PUBLIC TO \"$user\" WITH GRANT OPTION;"
+}
+
+function pg_create_admin_user(){
+	local user="$1"
+	local password="$2"
+	sudo -u postgres psql -c  "CREATE USER \"$user\" WITH LOGIN PASSWORD \"$password\";"
+	sudo -u postgres psql "template1" -c  "ALTER USER \"$user\" CREATEDB CREATEROLE;"
 }
 
 function pg_drop_user(){
 	local user="$1"
 	sudo -u postgres psql -c  "\
-		DROP USER $user;" 
+		DROP USER \"$user\";"
 }
 
 function pg_drop_database(){
@@ -37,14 +54,14 @@ function pg_drop_database(){
 	sudo -u postgres psql -c  "\
 	SELECT pg_terminate_backend(pg_stat_activity.pid) \
 	FROM pg_stat_activity \
-	WHERE pg_stat_activity.datname = '$database' \
+	WHERE pg_stat_activity.datname =\"$database\" \
   	AND pid <> pg_backend_pid();"
-	sudo -u postgres dropdb $database 
+	sudo -u postgres dropdb "$database"
 }
 
 
 function pg_exec(){
 	local database="$1"
 	local filePath="$2"
-	sudo -u postgres psql $database < $filePath
+	sudo -u postgres psql "$database" < "$filePath"
 }

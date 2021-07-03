@@ -5,7 +5,7 @@ TODO:
 * de facut variata de intrebat autoCOmpleteul de la Binar direct.
 * de implementat posibilitatea de a adauga/stergerea intru-un anumit yaml file.
     la add si delete exista -f
-* de adauugat comanda pentru import la toate *.autocomplete.yaml dintr-un director
+* de adaugat comanda pentru import la toate *.autocomplete.yaml dintr-un director
     comanda import
 * de implementat optiuni de tip FILE si de tip ENUM
 """

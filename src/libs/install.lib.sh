@@ -3,7 +3,7 @@
 
 function add_j(){
 	v set -t path $1
-	sudo PYTHONPATH=$PYTHONPATH HOME=/root/ v set -t path $1
+	sudo PYTHONPATH="$PYTHONPATH" HOME=/root/ v set -t path "$1"
 }
 
 function add_git(){
@@ -11,7 +11,7 @@ function add_git(){
 }
 
 function check_path(){
-	local p=$1
+	local p="$1"
 	[ "$p" == "" ] && return 1
 	ABS_PATH=$(readlink -e $p)
 	[ -z "$ABS_PATH" ] && return 1

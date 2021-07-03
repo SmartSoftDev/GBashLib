@@ -1,5 +1,5 @@
 #gbl_usage_function
-_NAME=$(basename $0)
+_NAME=$(basename "$0")
 
 _gbl_usage(){
 	cat <<EOM
@@ -8,8 +8,9 @@ $0 [OPTIONS] command1 arg1 arg2 -- command2 arg1 arg2 -- ...
 EOM
 	echo "";
 	echo "OPTIONS: getopt='$G_ARGS'"
-	local GETOPT_ARGS_INDEX=`echo $G_ARGS | sed 's/[:]*//g'`
-	local OPTIONS=($(echo $GETOPT_ARGS_INDEX | fold -w1))
+	local GETOPT_ARGS_INDEX OPTIONS
+	GETOPT_ARGS_INDEX=`echo $G_ARGS | sed 's/[:]*//g'`
+	OPTIONS=($(echo $GETOPT_ARGS_INDEX | fold -w1))
 	for (( i=0; i<${#OPTIONS[@]}; i++ ));
 	do
 		local var_name=G_ARGS_DESCR_${OPTIONS[$i]}
@@ -35,7 +36,7 @@ EOM
 		fi
 		cmds_text+="\t  ${cmd_name} ${cmd_args} $cmd_descr\n"
 	done
-	echo -e $cmds_text | column -t -n | tr "!+!" " "
+	echo -e "$cmds_text" | column -t -n | tr "!+!" " "
 	
 	echo "";
 	echo "$G_USAGE_SFX"
@@ -65,7 +66,8 @@ gblcmd_zhelp(){
 	echo -e "\nAUTOCOMPLETE: \teval \"\$( $0 _print_autocomplete )\" \n \t\teval \"\$( $0 _print_autocomplete alias_name)\"" 
 	echo "";
 	echo "G FUNCTIONS:"
-	local G_FUNCTIONS=( $(compgen -A function |grep -e "^gbl_" | cut -c5-) )
+	local G_FUNCTIONS
+	G_FUNCTIONS=( $(compgen -A function |grep -e "^gbl_" | cut -c5-) )
 	
 	for (( i=0; i<${#G_FUNCTIONS[@]}; i++ ));
 	do 
@@ -97,36 +99,36 @@ _ALLCMDS=($(compgen -A function |grep gblcmd_ | cut -c8- | sort) --)
 
 if [ "$1" == "_print_autocomplete_result" ] ; then
 	shift
-	CWORD=$1
+	CWORD="$1"
 	shift
 	shift
 	REZ=(${_ALLCMDS[@]})
-	FILETER=""
+	FILTER=""
 	UNKNOWN="no"
-	if [ $# == "1" ] && [ $# == $CWORD ] ; then
+	if (( $# == 1 )) && [ $# == "$CWORD" ] ; then
 		FILTER="$1"
 	else
 		#find if there is an autocompletion function for this command
 		arr=($@)
-		j=0
+		(( j=0 ))
 		cmd=""
 		for (( i= 0; i < $# ; i++ )) ; do
-			[ ${arr[$i]} == "--" ] && {
-				let j=$i+1
+			[ "${arr[$i]}" == "--" ] && {
+				(( j=i+1 ))
 				cmd=""
 			}
-			[ $j == $i ] && cmd=${arr[$i]}
+			(( j == i )) && cmd="${arr[$i]}"
 		done
-		let z=i-1
-		if [ $z == $j ] && [ $# == $CWORD ] ;then
+		(( z=i-1 ))
+		if (( z == j )) && [ $# == "$CWORD" ] ;then
 			FILTER="$cmd" 
 		else
 			if [ "x$cmd" != "x" ]; then
-				let x=$i-$j
+				(( x=i-j ))
 				if [ $# == $CWORD ] ; then 
-					let x--
+					(( x-- ))
 					#we need to set filter
-					let z=$#-1
+					(( z=$#-1 ))
 					FILTER=${arr[$z]}
 				fi
 				var_name="gblcmdautocomp_${cmd}_$x"
@@ -155,8 +157,8 @@ if [ "$1" == "_print_autocomplete_result" ] ; then
 			FILTER=${FILTER##*/}
 		fi
 		
-		for i in ${REZ[@]} ; do
-			[[ "$i" =~ "$FILTER" ]] && echo $i  
+		for i in "${REZ[@]}" ; do
+			[[ "$i" =~ "$FILTER" ]] && echo "$i"
 		done
 	else
 		echo "${REZ[@]}"
@@ -171,11 +173,11 @@ fi
 
 #G arguments parsing
 MAX_INDEX=0
-while getopts $G_ARGS flag >/dev/null 2>&1 
+while getopts $G_ARGS flag >/dev/null 2>&1
 do
 	if [ "$flag" == "?" ] ; then gbl_err "unknown option!\n"; _gbl_usage ; exit 0 ; fi
 	declare "G_ARG_$flag=$OPTARG"
-	eval 'if [ -z "$G_ARG_'$flag'" ] ; then G_ARG_'$flag'=true ; fi'
+	eval 'if [ -z "$G_ARG_'"$flag"'" ] ; then G_ARG_'"$flag"'=true ; fi'
 	MAX_INDEX=$OPTIND
 done
 for i in $(seq 2 $MAX_INDEX) ; do
@@ -189,19 +191,19 @@ type gbl_parse_args >/dev/null 2>&1 && gbl_parse_args
 
 CMD_RUN_COUNT=
 
-while [ $# -gt 0 ]
+while (( $# > 0 ))
 do
-	CMD=$1
+	CMD="$1"
 	if [ -z "$CMD" ] ; then
 		break
 	fi
 	shift
 	CMD_ARGS=()
-	i=0
+	(( i=0 ))
 	
 	while [ $# -gt 0 ]
 	do
-		if [ -z $1 ] ; then break; fi
+		if [ -z "$1" ] ; then break; fi
 		if [ "$1" == "--" ] ; then shift; break; fi
 		((i++))
 		CMD_ARGS[i]=$1
@@ -212,14 +214,14 @@ do
 		#check for prefix commands
 		all_cmds=( ${_ALLCMDS[@]} )
 		detect=( )
-		for i in ${all_cmds[@]} ; do 
+		for i in "${all_cmds[@]}" ; do
 			if [[ "$i" =~ "$CMD" ]] ; then 
-				detect=( ${detect[@]} $i) ; 
+				detect=( ${detect[@]} "$i" ) ;
 			fi 
 		done
-		if [ ${#detect[@]} -gt 0 ] ; then
+		if (( ${#detect[@]} > 0 )) ; then
 			if [ ${#detect[@]} -gt 1 ] ; then
-				gbl_fatal "ambigous command '$CMD' -> ( ${detect[@]} )"
+				gbl_fatal "ambiguous command '$CMD' -> ( ${detect[@]} )"
 			else
 				gbl_log "$CMD -> $detect"
 				CMD=$detect
