@@ -1,10 +1,10 @@
 
 function get_input_endless(){
-	local txt=$1
-	local default=$2
+	local txt="$1"
+	local default="$2"
 	while true 
 	do
-		echo -ne $txt
+		echo -ne "$txt"
 		if [ -z "$default" ] ; then
 			echo ""
 		else
@@ -17,8 +17,8 @@ function get_input_endless(){
 }
 
 function get_input_endless_yes_no(){
-	local txt=$1
-	local default=$2
+	local txt="$1"
+	local default="$2"
 	while true 
 	do
 		echo -e "$txt. y/n? (default: $default)"
@@ -26,12 +26,12 @@ function get_input_endless_yes_no(){
 		[ -z "$READ_VAR" ] && [ -z "$default" ] || break
 		[[ "$READ_VAR" =~ y|n ]] && break
 	done
-	[ -z "$READ_VAR" ] && READ_VAR=$default		
+	[ -z "$READ_VAR" ] && READ_VAR="$default"
 }
 
 function get_input_yes_no(){
-	local txt=$1
-	local default=$2
+	local txt="$1"
+	local default="$2"
 	while true 
 	do
 		echo -e "$txt. y/n? (default: $default)"
@@ -39,12 +39,12 @@ function get_input_yes_no(){
 		[ -z "$READ_VAR" ] && [ -z "$default" ] || break
 		[[ "$READ_VAR" =~ y|n ]] && break
 	done
-	[ -z "$READ_VAR" ] && READ_VAR=$default
+	[ -z "$READ_VAR" ] && READ_VAR="$default"
 }
 
 function get_input_yes_no_exit(){
-	local txt=$1
-	local default=$2
+	local txt="$1"
+	local default="$2"
 	
 	get_input_yes_no "$txt" "$default"
 	

@@ -1,4 +1,4 @@
-export G_BASH_LIB=$(dirname ${BASH_SOURCE[0]})
+export G_BASH_LIB=$(dirname "${BASH_SOURCE[0]}")
 
 . $(gbl ip)
 . $(gbl log)
@@ -10,11 +10,11 @@ _gbl_my_jump(){
 
     case "$1" in
     "get")
-        v get -t path $2
+        v get -t path "$2"
         return 0;
     ;;
     "set")
-        local p=$3
+        local p="$3"
         [[ "$3" == "." ]] && p=$(pwd)
         v set -t path "$2=$p"
         return 0;
@@ -38,7 +38,8 @@ usage to list: $COLOR_GREEN j$COLOR_NONE or $COLOR_GREEN j list$COLOR_NONE "
         v list -dt path | column -t -n
         return 0
     }
-    local location=$(v get -t path $1 )
+    local location
+    location=$( v get -t path "$1" )
     [[ "$location" == "" ]] && {
         location=($(v list -t path -n  | grep "$1"))
         if [[ ${#location[@]} == 0 ]] ; then
@@ -124,11 +125,11 @@ _gbl_my_ssh(){
         [ "$_IP_USER" != "" ] && user=$_IP_USER
         
         
-        tpl -i $G_BASH_LIB/tpls/ssh_host.tpl -r -I "_$alias" -o "$HOME/.ssh/config" -v ALIAS=$alias IP=$ip USER=$user PORT=$port
+        tpl -i "$G_BASH_LIB/tpls/ssh_host.tpl" -r -I "_$alias" -o "$HOME/.ssh/config" -v "ALIAS=$alias" "IP=$ip" "USER=$user" "PORT=$port"
         local save_ip=
         v set -t ssh "$alias=$user@$ip:$port"
         
-        ssh-copy-id -p $port $user@$ip || {
+        ssh-copy-id -p "$port" "$user@$ip" || {
             echo "could not copy ssh-id! FAIL!"
         }
         return 0;
@@ -147,19 +148,19 @@ _gbl_my_ssh(){
         return 0
     }
     
-    local ip=$(v get -t ssh $alias )
+    local ip=$(v get -t ssh "$alias" )
     [ "$ip" == "" ] && {
         ip=($(v list -t ssh -n  | grep "$alias"))
         if [ ${#ip[@]} == 0 ] ; then 
             echo -e "shh is $COLOR_RED NOT-SET $COLOR_NONE use '$COLOR_GREEN s set $alias IP$COLOR_NONE'"
             return 1
-    elif [ ${#ip[@]} -gt 1 ] ; then
+    elif (( ${#ip[@]} > 1 )) ; then
             echo -e "ip $alias is ambigues: (${ip[@]})"
             return 1
         else
             echo "$alias -> $ip"
             alias="$ip"
-            ip=$(v get -t ssh $ip )
+            ip=$(v get -t ssh "$ip" )
         fi
     }
     parse_user_ip_port "$ip"
@@ -259,10 +260,10 @@ function sd(){
         ;;
     esac
     local service=""
-    for s in $(v get -t systemd -s $2) ; do
+    for s in $(v get -t systemd -s "$2") ; do
         if [ "$service" != "" ] ; then
             echo "Ambiguous service for '$2' :"
-            for s in $(v get -t systemd -s $2) ; do
+            for s in $(v get -t systemd -s "$2") ; do
                 echo -e "\t$2 -> $s"
             done
             return
@@ -270,5 +271,5 @@ function sd(){
         service="$s"
     done
     echo "$run $service"
-    $run $service
+    $run "$service"
 }

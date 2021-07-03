@@ -14,9 +14,7 @@ import os
 import argparse
 import sys
 import yaml
-
-import gnupg
-
+import uuid
 from types import SimpleNamespace
 
 # Bash (terminal) colors
@@ -29,20 +27,46 @@ cfg = SimpleNamespace()  # singleton
 cfg.env_name = None  # means no special MULTI-ENV name was given.
 KEY_TYPES = '~types'
 KEY_VERSION = '~version'
+KEY_INCLUDE = '~include'
 NO_GPG_KEYS_ERROR_MSG = "Could not delete all public keys, for encryption should remain at least one public key!!"
 
+_gnupg = None
 
-def decrypt(value, gpg, skip_cannot_decrypt):
-    gpg_head = "-----BEGIN PGP MESSAGE-----"
-    gpg_tail = "-----END PGP MESSAGE-----"
+
+def _init_gpg(verbose=None):
+    global _gnupg
+    if _gnupg is None:
+        import gnupg
+        _gnupg = gnupg.GPG(verbose=verbose)
+        _gnupg.encoding = 'utf-8'
+
+    return _gnupg
+
+
+def _decrypt(value, skip_cannot_decrypt):
+    gpg = _init_gpg()
     loc_gpg_user_id_s = gpg.list_keys()
     field_gpg_usr_s_id = [usr_id['id'] for usr_id in value.get('keys', [])]
-    gpg_usr_s_id = [gpg_crt for gpg_crt in loc_gpg_user_id_s if
-                    gpg_crt['fingerprint'] in field_gpg_usr_s_id]
-    if len(gpg_usr_s_id) == 0 and not skip_cannot_decrypt:
-        raise ValueError("No gpg public keys available for decryption!")
-    enc_field_formatted = "\n".join([gpg_head, value.get("enc_str"), gpg_tail])
+    gpg_usr_s_id = [gpg_crt for gpg_crt in loc_gpg_user_id_s if gpg_crt['fingerprint'] in field_gpg_usr_s_id]
+    if len(gpg_usr_s_id) == 0:
+        if skip_cannot_decrypt:
+            return ""
+        else:
+            raise ValueError("No gpg public keys available for decryption!")
+    enc_field_formatted = "-----BEGIN PGP MESSAGE-----\n\n" + value.get("enc_str") + "\n-----END PGP MESSAGE-----\n"
     return str(gpg.decrypt(enc_field_formatted))
+
+
+def _format_gpg_enc_str(enc_str):
+    ret = ''
+    for line in enc_str.split('\n'):
+        line = line.strip()
+        if len(line) == 0:
+            continue
+        if line.startswith('-----'):
+            continue
+        ret += line
+    return ret
 
 
 def read_single_file(file_path):
@@ -81,12 +105,14 @@ def read_config(recursive):
         cfg.config = read_single_file(cfg.dbPath)
     else:
         if recursive == 0:
-            recursive = 999
+            recursive = 99
         config = {}
         file_path = cfg.dbPath
         dir_path = cfg.path
-        for i in range(recursive):
-            config.update(read_single_file(file_path))
+        for i in range(recursive+1):  # +1 because 1 is for current directory
+            new_config = read_single_file(file_path)
+            new_config.update(config)
+            config = new_config  # we need that deeper changes override then one in previous directory
             if dir_path == '/':
                 break  # reached the end
             dir_path = os.path.dirname(dir_path)
@@ -172,6 +198,8 @@ def main():
     sp = subparsers.add_parser("enc", help="manipulate ws/pkg evn: add new gpg encrypted entry "
                                            "to uid with name uid_name ")
     sp.set_defaults(cmd="enc")
+    sp.add_argument('-r','--random', action='store_true', default=False, help='Generate random string value using uuid4() ')
+
     sp.add_argument('value', type=str, help='variable name=value. Ex:"test_var=1234"')
     sp.add_argument('recipients', type=str, nargs="+", help='PGP users fingerprints|IDs')
 
@@ -276,9 +304,8 @@ def main():
                 save_config()
 
     elif args.cmd == 'enc':
-        gpg = gnupg.GPG(gnupghome=os.path.join(os.environ['HOME'], ".gnupg"), keyring="pubring.kbx",
-                        verbose=args.verbose > 0)
-        gpg.encoding = 'utf-8'
+        gpg = _init_gpg(args.verbose > 0)
+
         gpg_usr_s_id = [{"id": user_key['fingerprint'], "uids": user_key['uids']} for user_key in gpg.list_keys()
                         if user_key['fingerprint'] in args.recipients]
         if len(gpg_usr_s_id) < 1:
@@ -289,10 +316,13 @@ def main():
         if len(namespace) > 1:
             value = namespace[1]
         else:
-            raise Exception("There is not value specified")
+            if args.random:
+                value = uuid.uuid4().hex
+            else:
+                raise Exception("There is not value specified")
 
-        if name in config and config[name].get("enc_type"):
-            raise ValueError("Field value is already encrypted!")
+        if name in config:
+            raise ValueError("Field value is already Exists! if you want to reEncrypt run v add-user-key or v del-user-key")
 
         def get_type(val):
             tp = 'str'
@@ -309,15 +339,8 @@ def main():
         enc_str = str(gpg.encrypt(value, args.recipients))
         if len(enc_str) == 0:
             raise Exception("Could not encrypt the value")
-        ret = ''
-        for line in enc_str.split('\n'):
-            line = line.strip()
-            if len(line) == 0:
-                continue
-            if line.startswith('-----'):
-                continue
-            ret += line
-        enc_str = ret
+
+        enc_str = _format_gpg_enc_str(enc_str)
         field_obj = {"enc_type": "gpg",
                      "keys": [{"id": user_key['fingerprint'], "uids": user_key['uids']
                                } for user_key in gpg.list_keys() if user_key['fingerprint'] in args.recipients],
@@ -337,20 +360,21 @@ def main():
                 print(config[name])
 
     elif args.cmd == 'list':
-        gpg = gnupg.GPG(gnupghome=os.path.join(os.environ['HOME'], ".gnupg"), verbose=args.verbose > 0,
-                        keyring="pubring.kbx")
-        gpg.encoding = 'utf-8'
         if sys.stdout.isatty():
             args.decorate = True
         if cfg.env_name:
             print_one(cfg, 'V_ENV_NAME', cfg.env_name)
 
         if args.all:
-            for k, v in cfg.config.items():
+            gpg = None
+            for k in sorted(cfg.config.keys()):
+                v = cfg.config[k]
                 if k == KEY_TYPES:
                     continue
                 if isinstance(v, dict) and v.get("enc_type") == "gpg":
-                    v = decrypt(v, gpg, args.skip_cannot_decrypt)
+                    if gpg is None:
+                        gpg = _init_gpg(args.verbose > 0)
+                    v = _decrypt(v, args.skip_cannot_decrypt)
                     if len(v) == 0:
                         if not args.skip_cannot_decrypt:
                             raise ValueError(f"Could not decrypt {k=} {v=}")
@@ -361,9 +385,10 @@ def main():
                 for type_name, tip in cfg.config[KEY_TYPES].items():
                     if not args.bash:
                         print("%s:" % (type_name,))
-                    for name, value in tip.items():
+                    for name in sorted(tip.keys()):
+                        value = tip[name]
                         if isinstance(value, dict) and value.get("enc_type") == "gpg":
-                            value = decrypt(value, gpg, args.skip_cannot_decrypt)
+                            value = _decrypt(value, args.skip_cannot_decrypt)
                             if len(value) == 0:
                                 if not args.skip_cannot_decrypt:
                                     raise ValueError(f"Could not decrypt {name=} {value=}")
@@ -371,11 +396,12 @@ def main():
                                     value = '<CANNOT DECRYPT>'
                         print_one(cfg, name, value, type_name)
         else:
-            for name, value in config.items():
+            for name in sorted(config.keys()):
+                value = config[name]
                 if name in (KEY_TYPES, KEY_VERSION):
                     continue
                 if isinstance(value, dict) and value.get("enc_type") == "gpg":
-                    value = decrypt(value, gpg, args.skip_cannot_decrypt)
+                    value = _decrypt(value, args.skip_cannot_decrypt)
                     if len(value) == 0:
                         if not args.skip_cannot_decrypt:
                             raise ValueError(f"Could not decrypt {name=} {value=}")
@@ -396,8 +422,8 @@ def main():
         save_config()
 
     elif args.cmd in ('add-user-key', 'del-user-key'):
-        gpg = gnupg.GPG(gnupghome=os.path.join(os.environ['HOME'], ".gnupg"), keyring="pubring.kbx")
-        gpg.encoding = 'utf-8'
+        gpg = _init_gpg(args.verbose > 0)
+
         gpg_key_list = gpg.list_keys()
         # we check that requested add/del keys exist in pgp
         gpg_usr_s_id = [{"id": user_key['fingerprint'], "uids": user_key['uids']} for user_key in gpg_key_list
@@ -408,15 +434,17 @@ def main():
 
         if args.key_name is None:
             # process all config encrypted fields
-            for name, value in config:
+            for name, value in config.items():
                 # process only gpg encrypted fields
                 if isinstance(value, dict) and value.get("enc_type") == "gpg":
                     # let's check if all the keys are present
                     value_keys = value.get('keys')
-                    found_keys = [user_key for user_key in gpg_key_list if user_key['fingerprint'] in value_keys]
+                    value_keys_fingerprints = [key['id'] for key in value_keys]
+                    found_keys = [user_key for user_key in gpg_key_list if
+                                  user_key['fingerprint'] in value_keys_fingerprints]
                     if len(value_keys) != len(found_keys):
-                        parser.error(message=f"Could not find all ({len(found_keys)} of {len(value_keys)}) keys "
-                                             f"to re/encrypt {name=}")
+                        raise Exception(f"Could not find all ({len(found_keys)} of {len(value_keys)}) keys "
+                                        f"to re/encrypt {name=}")
                     if args.cmd == 'add-user-key':
                         for usr_id in gpg_usr_s_id:
                             if usr_id not in value_keys:
@@ -428,7 +456,8 @@ def main():
                         parser.error(message=NO_GPG_KEYS_ERROR_MSG)
 
                     all_recipients = [recipient['id'] for recipient in value['keys']]
-                    value['enc_str'] = str(gpg.encrypt(str(gpg.decrypt(value['enc_str'])), all_recipients))
+                    value['enc_str'] = _format_gpg_enc_str(
+                        str(gpg.encrypt(str(_decrypt(value, False)), all_recipients)))
                     config[name] = value
         else:
             # only one field
@@ -438,10 +467,13 @@ def main():
             if value and isinstance(value, dict) and value.get("enc_type") == "gpg":
                 # check if all keys are present
                 value_keys = value.get('keys')
-                found_keys = [user_key for user_key in gpg_key_list if user_key['fingerprint'] in value_keys]
+                value_keys_fingerprints = [key['id'] for key in value_keys]
+                found_keys = [user_key for user_key in gpg_key_list if
+                              user_key['fingerprint'] in value_keys_fingerprints]
                 if len(value_keys) != len(found_keys):
-                    parser.error(message=f"Could not find all ({len(found_keys)} of {len(value_keys)}) keys "
-                                         f"to re/encrypt {name=}")
+                    print(f"{gpg_key_list=}")
+                    raise Exception(f"Could not find all ({len(found_keys)} of {len(value_keys)} [{value_keys}]) keys "
+                                    f"to re/encrypt {name=}")
 
                 if args.cmd == 'add-user-key':
                     for usr_id in gpg_usr_s_id:
@@ -454,7 +486,8 @@ def main():
                     parser.error(message=NO_GPG_KEYS_ERROR_MSG)
 
                 all_recipients = [recipient['id'] for recipient in value['keys']]
-                value["enc_str"] = str(gpg.encrypt(str(gpg.decrypt(value['enc_str'])), all_recipients))
+                value["enc_str"] = _format_gpg_enc_str(
+                    str(gpg.encrypt(str(_decrypt(value, False)), all_recipients)))
             else:
                 parser.exit(message="Key value cannot be empty!")
         save_config()
