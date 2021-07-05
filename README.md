@@ -48,6 +48,20 @@ This is useful if you have to configure ssh differently for different types of h
 - When you set a new alias the `s` command will copy your keys (using ssh-copy-id command) to that host, that you are not prompted for password anymore.
 This can be skipped with `$ s set --skip-keys ALIAS...`.
 
+## `c` - serial console with one letter and intelligent autocomplete
+
+This is calling different serial console setups. It is very usefull when you have multiple USB to Serial adapters. The best practice is to give them a specifi name based on serial number using udev like this:
+
+```
+$ cat /etc/udev/rules.d/90-serial.rules
+SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", SYMLINK+="ttyUSB_rpi"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", SYMLINK+="ttyUSB_opi"
+```
+
+Then you can configure them as follows:
+- `$ c set  ALIAS1 DEV_PATH@BAUDRATE` - when BAUDRATE is missing it defaults to 115200.
+The `c` command uses `screen` serial console. And you can start the console using `c ALIAS1`.
+
 ## `d` - define and run commands in a very human friendly way
 
 - `d` command always looks for `d.bl.sh` file inside current directory.
