@@ -28,7 +28,7 @@ function pg_create_user_and_database(){
 	local database="$3"
 	sudo -u postgres psql -c  "CREATE DATABASE \"$database\";"
 	sudo -u postgres psql -c  "\
-		CREATE USER \"$user\" WITH PASSWORD \"$password\"; \
+		CREATE USER \"$user\" WITH PASSWORD '$password'; \
 		GRANT ALL PRIVILEGES ON DATABASE \"$database\" to \"$user\";"
 	sudo -u postgres psql "$database" -c  "\
         GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA PUBLIC TO \"$user\" WITH GRANT OPTION;\
@@ -52,7 +52,7 @@ function pg_create_admin_user_and_database(){
 function pg_create_admin_user(){
 	local user="$1"
 	local password="$2"
-	sudo -u postgres psql -c  "CREATE USER \"$user\" WITH LOGIN PASSWORD \"$password\";"
+	sudo -u postgres psql -c  "CREATE USER \"$user\" WITH LOGIN PASSWORD '$password';"
 	sudo -u postgres psql "template1" -c  "ALTER USER \"$user\" CREATEDB CREATEROLE;"
 }
 
