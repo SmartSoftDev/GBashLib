@@ -21,15 +21,15 @@ gblcmd_git_status(){
 
 
 gblcmd_git_clean_local_only_branches(){
-    set -eu
+    set -e
     local main_branch="dev"
     [ ! -z "$1" ] && main_branch="$1"
-    git_cmd 'remote prune origin' .
+    git remote prune origin
     echo "checkout the '$main_branch' branch"
     git checkout $main_branch
     set +e
-    for i in $(git branch -vv --merged | grep ': gone]' | awk '{print $1}'); do
+    for i in $(git branch -vv | grep ': gone]' | awk '{print $1}'); do
         echo "deleting branch: $i"
-        git branch -d $i
+        git branch -D $i
     done
 }
