@@ -2,13 +2,13 @@
 
 function parse_user_ip_port(){
 	#This functions extracts  user@ip:port/URI
-	local ip=$1
+	local ip="$1"
 	local user=""
 	local port=""
 	local uri=""
 	if [ -z "$ip" ] ; then
-		#wrong argumens
-		return 1 
+		#wrong arguments
+		return 1
 	fi
 	
 	local arr=(${ip//@/ })

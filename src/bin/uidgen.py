@@ -13,7 +13,7 @@ import shutil
 import sys
 
 
-class config(object):
+class Config:
     def __init__(self):
         self.dir = "/tmp/uidgen/"
         self.uid_name = ""
@@ -23,7 +23,7 @@ class config(object):
         self.limit = 0
 
 
-cfg = config()
+cfg = Config()
 
 import hashlib
 
@@ -50,24 +50,23 @@ def main(args):
 
     subparsers = parser.add_subparsers(title="Sub commands")
     create_parser = subparsers.add_parser("create", help="manipulate ws/pkg evn: create uid with name uid_name")
-    create_parser.set_defaults(cmd="create");
+    create_parser.set_defaults(cmd="create")
 
     add_parser = subparsers.add_parser("add", help="manipulate ws/pkg evn: add new entry to uid with name uid_name")
-    add_parser.set_defaults(cmd="add");
+    add_parser.set_defaults(cmd="add")
     add_parser.add_argument('-f', '--files', action='store_true', default=False,
                             help='add files instead of string')
     add_parser.add_argument('entry', type=str, nargs="+",
                             help='list of entries')
 
     get_parser = subparsers.add_parser("get", help="manipulate ws/pkg evn: calculate hash of uid with name uid_name")
-    get_parser.set_defaults(cmd="get");
+    get_parser.set_defaults(cmd="get")
     get_parser.add_argument('-l', '--limit', type=int, default=0,
                             help='Limit the output string to this number of chars')
 
     if len(sys.argv) > 1 and (sys.argv[1] == "--clean" or sys.argv[1] == '-c'):
         if not cfg.silent:
-            print
-            "uidgen CLEARED"
+            print("uidgen CLEARED")
         if os.path.isdir(cfg.dir):
             shutil.rmtree(cfg.dir)
         return
@@ -86,39 +85,33 @@ def main(args):
 
     if cfg.cmd == "create":
         if not cfg.silent:
-            print
-            "create " + cfg.uid_name
+            print(f"create {cfg.uid_name}")
         if os.path.exists(cfg.uid_file):
-            print
-            "You are trying to create a uid but it exists already! uid_name=" + cfg.uid_name + "uid_file=" + cfg.uid_file
+            print(f"You are trying to create a uid but it exists already! {cfg.uid_name=} {cfg.uid_file=}")
         with open(cfg.uid_file, "w+") as _:
             pass
     elif cfg.cmd == "get":
         with open(cfg.uid_file, "rb") as f:
             if args.limit > 0:
-                print
-                hashfile(f, hashlib.sha256())[:args.limit]
+                print(hashfile(f, hashlib.sha256())[:args.limit])
             else:
-                print
-                hashfile(f, hashlib.sha256())
+                print(hashfile(f, hashlib.sha256()))
         os.remove(cfg.uid_file)
     elif cfg.cmd == "add":
         if args.files:
             with open(cfg.uid_file, "a") as f:
-                for fname in args.entry:
-                    with open(fname, 'rb') as fin:
-                        hashSum = hashfile(fin, hashlib.sha256())
+                for f_name in args.entry:
+                    with open(f_name, 'rb') as fin:
+                        hash_sum = hashfile(fin, hashlib.sha256())
                     if not cfg.silent:
-                        print
-                        "%s add file %s" % (cfg.uid_name, fname)
-                    f.write("%s %s\n" % (fname, hashSum))
+                        print("%s add file %s" % (cfg.uid_name, f_name))
+                    f.write("%s %s\n" % (f_name, hash_sum))
         else:
             with open(cfg.uid_file, "a") as f:
                 for s in args.entry:
                     if not cfg.silent:
-                        print
-                        "%s add %s" % (cfg.uid_name, s)
-                    f.write(s + "\n")
+                        print("%s add %s" % (cfg.uid_name, s))
+                    f.write(f"{s}\n")
 
 
 if __name__ == '__main__':

@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
-'''
+"""
 Auto complete helper.
 TODO:
 * de facut variata de intrebat autoCOmpleteul de la Binar direct.
 * de implementat posibilitatea de a adauga/stergerea intru-un anumit yaml file.
     la add si delete exista -f
-* de adauugat comanda pentru import la toate *.autocomplete.yaml dintr-un director
+* de adaugat comanda pentru import la toate *.autocomplete.yaml dintr-un director
     comanda import
 * de implementat optiuni de tip FILE si de tip ENUM
-'''
+"""
 import argparse
 import os
-
 import yaml
+
+from types import SimpleNamespace
 from tabulate import tabulate
 
-C = lambda: None
-C.keys = lambda: None
+C = SimpleNamespace()
+C.keys = SimpleNamespace()
 C.keys.cfgImport = 'import'
-cfg = lambda: None
+cfg = SimpleNamespace()
 cfg.path = os.environ['HOME']
 cfg.dbPath = os.path.join(cfg.path, ".auto_complete.yaml")
 
@@ -37,8 +38,8 @@ def read_config():
             cfg.config = yaml.safe_load(f)
 
     # read imported files into description
-    for fpath in cfg.config[C.keys.cfgImport]:
-        with open(fpath) as f:
+    for f_path in cfg.config[C.keys.cfgImport]:
+        with open(f_path) as f:
             cfg.description.update(yaml.safe_load(f))
 
 
@@ -89,7 +90,7 @@ def cmd_del():
 
 
 def print_option(opt):
-    return "{}/{}/{}".format(opt['short'], opt['long'], opt['type'] if opt['type'] else "")
+    return f"{opt['short']}/{opt['long']}/{opt['type'] if opt['type'] else ''}"
 
 
 def process_print_cmd():
@@ -133,7 +134,7 @@ def cmd_get():
     else:
         cur_word = ""
     if exe not in cfg.description:
-        return  # bin not foud
+        return  # bin not found
     b = cfg.description[exe]
     path = get_path_from_args(args)
     if len(path) == 0:
@@ -170,11 +171,10 @@ def cmd_get():
                 long = o['long']
                 if len(cur_word):
                     if short.startswith(cur_word):
-                        ret.append('-' + short)
-
+                        ret.append(f'-{short}')
                 else:
-                    ret.append('-' + short)
-                    ret.append('--' + long)
+                    ret.append(f'-{short}')
+                    ret.append(f'--{long}')
     elif len(cur_word) == 0:
         # give all options and all subcommands
         for o in p['options']:
@@ -210,7 +210,7 @@ def cmd_import():
 
 
 def main():
-    if cfg.args.cmd == 'add' or cfg.args.cmd == 'del' or cfg.args.cmd == 'print':
+    if cfg.args.cmd in ['add', 'del', 'print']:
         if cfg.args.file:
             cfg.dbPath = cfg.args.file
             cfg.path = os.path.dirname(cfg.dbPath)
@@ -261,10 +261,10 @@ def parse_args():
     addP.add_argument('importDirectory', type=str, help='Import directory path')
     addP.set_defaults(cmd='import')
 
-    addP = subparsers.add_parser('_list', help='used internaly by bashrc.inc for generating auto complete')
+    addP = subparsers.add_parser('_list', help='used internally by bashrc.inc for generating auto complete')
     addP.set_defaults(cmd='_list')
 
-    addP = subparsers.add_parser('_get', help='used internaly by bashrc.inc for generating auto complete')
+    addP = subparsers.add_parser('_get', help='used internally by bashrc.inc for generating auto complete')
     addP.set_defaults(cmd='_get')
     addP.add_argument('comp_words', type=str, nargs="+", help='hole list of arguments')
 

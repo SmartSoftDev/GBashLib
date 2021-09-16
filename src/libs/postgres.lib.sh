@@ -14,11 +14,11 @@ function pg_database_exists(){
 
 function pg_user_exists(){
 	local user="$1"
-	if ! sudo -u postgres psql -A -t -c "SELECT 1 FROM pg_roles WHERE rolname='$user'" \
-	| grep -e "^${database}$" >/dev/null 2>/dev/null ; then
-		return 1
-	else
+
+	if [ "$(sudo -u postgres psql -A -t -c "SELECT 1 FROM pg_roles WHERE rolname='$user' ; ")" == "1" ] ; then
 		return 0
+	else
+		return 1
 	fi
 }
 
@@ -47,6 +47,13 @@ function pg_create_admin_user_and_database(){
 	sudo -u postgres psql "$database" -c  "\
         GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA PUBLIC TO \"$user\" WITH GRANT OPTION;\
         GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA PUBLIC TO \"$user\" WITH GRANT OPTION;"
+}
+
+function pg_create_admin_user(){
+	local user="$1"
+	local password="$2"
+	sudo -u postgres psql -c  "CREATE USER \"$user\" WITH LOGIN PASSWORD \"$password\";"
+	sudo -u postgres psql "template1" -c  "ALTER USER \"$user\" CREATEDB CREATEROLE;"
 }
 
 function pg_drop_user(){
