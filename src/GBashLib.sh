@@ -4,7 +4,7 @@ _NAME=$(basename "$0")
 _gbl_usage(){
 	cat <<EOM
 Usage:
-$0 [OPTIONS] command1 arg1 arg2 -- command2 arg1 arg2 -- ... 
+$0 [OPTIONS] command1 arg1 arg2 -- command2 arg1 arg2 -- ...
 EOM
 	echo "";
 	echo "OPTIONS: getopt='$G_ARGS'"
@@ -15,14 +15,14 @@ EOM
 	do
 		local var_name=G_ARGS_DESCR_${OPTIONS[$i]}
 		echo -e "\t-${OPTIONS[$i]} : ${!var_name}"
-		
+
 	done
 	echo "";
 	echo "COMMANDS:"
 	local G_COMMANDS=( $(compgen -A function |grep gblcmd_ | cut -c8- | sort ) )
 	local cmds_text='';
 	for (( i=0; i<${#G_COMMANDS[@]}; i++ ));
-	do 
+	do
 		#echo -e "\t${G_COMMANDS[$i]} : ${G_COMMANDS_DESCR[$i]}"
 		local var_name=gblcmd_descr_${G_COMMANDS[$i]}
 		local var_name_args=gblcmd_descr_${G_COMMANDS[$i]}[1]
@@ -37,7 +37,7 @@ EOM
 		cmds_text+="\t  ${cmd_name} ${cmd_args} $cmd_descr\n"
 	done
 	echo -e "$cmds_text" | column -t -n | tr "!+!" " "
-	
+
 	echo "";
 	echo "$G_USAGE_SFX"
 }
@@ -63,18 +63,18 @@ gbl_err(){
 gblcmd_descr_zhelp='print help information (this screen)'
 gblcmd_zhelp(){
 	_gbl_usage
-	echo -e "\nAUTOCOMPLETE: \teval \"\$( $0 _print_autocomplete )\" \n \t\teval \"\$( $0 _print_autocomplete alias_name)\"" 
+	echo -e "\nAUTOCOMPLETE: \teval \"\$( $0 _print_autocomplete )\" \n \t\teval \"\$( $0 _print_autocomplete alias_name)\""
 	echo "";
 	echo "G FUNCTIONS:"
 	local G_FUNCTIONS
 	G_FUNCTIONS=( $(compgen -A function |grep -e "^gbl_" | cut -c5-) )
-	
+
 	for (( i=0; i<${#G_FUNCTIONS[@]}; i++ ));
-	do 
+	do
 		local var_name=gbl_descr_${G_FUNCTIONS[$i]}
 		echo -e "\tgbl_${G_FUNCTIONS[$i]} : ${!var_name}"
 	done
-	
+
 	#compgen -A function | grep -e "^gbl_"
 	echo ""
 }
@@ -86,7 +86,7 @@ gprint_autocomplete_bash_code(){
 	pushd `dirname $0` > /dev/null
 	SCRIPTPATH=`pwd`/`basename $0`
 	popd > /dev/null
-	
+
 	AUTOCOMPLETENAME=$_NAME
 	[ ! -z $2 ] && AUTOCOMPLETENAME=$2
 	echo "_gbl_bac_${_NAME}(){"
@@ -110,7 +110,7 @@ if [ "$1" == "_print_autocomplete_result" ] ; then
 	else
 		#find if there is an autocompletion function for this command
 		arr=($@)
-		(( j=0 ))
+		j=0
 		cmd=""
 		for (( i= 0; i < $# ; i++ )) ; do
 			[ "${arr[$i]}" == "--" ] && {
@@ -121,11 +121,11 @@ if [ "$1" == "_print_autocomplete_result" ] ; then
 		done
 		(( z=i-1 ))
 		if (( z == j )) && [ $# == "$CWORD" ] ;then
-			FILTER="$cmd" 
+			FILTER="$cmd"
 		else
 			if [ "x$cmd" != "x" ]; then
 				(( x=i-j ))
-				if [ $# == $CWORD ] ; then 
+				if [ $# == $CWORD ] ; then
 					(( x-- ))
 					#we need to set filter
 					(( z=$#-1 ))
@@ -150,13 +150,13 @@ if [ "$1" == "_print_autocomplete_result" ] ; then
 	if [ "x$UNKNOWN" == "xyes" ] ; then
 		REZ=($(ls))
 	fi
-	
+
 	if [ "x$FILTER" != "x" ] ; then
 		if [ "x$UNKNOWN" == "xyes" ] ; then
 			REZ=($(ls $(dirname $FILTER)))
 			FILTER=${FILTER##*/}
 		fi
-		
+
 		for i in "${REZ[@]}" ; do
 			[[ "$i" =~ "$FILTER" ]] && echo "$i"
 		done
@@ -181,7 +181,7 @@ do
 	MAX_INDEX=$OPTIND
 done
 for i in $(seq 2 $MAX_INDEX) ; do
-	shift 
+	shift
 done
 
 type gbl_parse_args >/dev/null 2>&1 && gbl_parse_args
@@ -199,8 +199,8 @@ do
 	fi
 	shift
 	CMD_ARGS=()
-	(( i=0 ))
-	
+	i=0
+
 	while [ $# -gt 0 ]
 	do
 		if [ -z "$1" ] ; then break; fi
@@ -215,9 +215,9 @@ do
 		all_cmds=( ${_ALLCMDS[@]} )
 		detect=( )
 		for i in "${all_cmds[@]}" ; do
-			if [[ "$i" =~ "$CMD" ]] ; then 
+			if [[ "$i" =~ "$CMD" ]] ; then
 				detect=( ${detect[@]} "$i" ) ;
-			fi 
+			fi
 		done
 		if (( ${#detect[@]} > 0 )) ; then
 			if [ ${#detect[@]} -gt 1 ] ; then
@@ -235,7 +235,7 @@ do
 	CMD_RUN_COUNT=1
 done
 
-if [ "$CMD_RUN_COUNT" != "1" ] ; then 
+if [ "$CMD_RUN_COUNT" != "1" ] ; then
 	#gbl_fatal "No command specified!"
 	_gbl_usage
 fi
