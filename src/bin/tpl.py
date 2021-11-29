@@ -17,6 +17,7 @@ def process_line(fi_line):
 def read_from_fo_replace(until_l):
     if not cfg.fo_repl:
         return
+    last_line_has_new_line = False
     while True:
         l = cfg.fo_repl.readline()
         if not l:
@@ -26,6 +27,8 @@ def read_from_fo_replace(until_l):
             if l == until_l:
                 break
         cfg.fo.write(l)
+        last_line_has_new_line = l.endswith('\n')
+    return last_line_has_new_line
 
 
 def skip_from_fo_replace(until_l):
@@ -84,8 +87,12 @@ def main():
             if cfg.args.id:
                 repl_id = repl_id.rstrip() + cfg.args.id + "\n"
             # read from output until we detect line "repl_id" which is the start of portion to be replaced.
-            read_from_fo_replace(repl_id)
-            cfg.fo.write(repl_id)
+            has_new_line_at_the_end = read_from_fo_replace(repl_id)
+            # we need to make sure that repl_id is writtent at the BEGINNING of the LINE
+            if not has_new_line_at_the_end:
+                cfg.fo.write('\n'+repl_id)
+            else:
+                cfg.fo.write(repl_id)
         else:
             # print "in:"+l
             if not cfg.args.delete:
@@ -114,7 +121,7 @@ if __name__ == "__main__":
     sp.add_argument('-r', '--replace', action='store_true', default=False,
                     help="replace content from file between match-start and match-end ")
     sp.add_argument('-d', '--delete', action='store_true', default=False,
-                    help="delete content from file between match-start and match-end ")
+                    help="delete content from file between match-start and match-end")
 
     sp.add_argument('-v', '--vars', type=str, nargs="+", help='Variables to be replaces inside tpl. NAME=VALUE')
     sp.add_argument('-I', '--id', default=None, type=str, help="Element id to be replaced. used in combination with -r")

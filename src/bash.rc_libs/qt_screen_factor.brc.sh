@@ -1,0 +1,6 @@
+
+SCREEN_FACTOR=`v get -t config SCREEN_FACTOR`
+
+if [ "$SCREEN_FACTOR" != "" ] ; then
+    export QT_SCREEN_SCALE_FACTORS="1;$SCREEN_FACTOR;$SCREEN_FACTOR"
+fi
