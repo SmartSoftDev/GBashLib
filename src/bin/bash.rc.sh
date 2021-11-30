@@ -2,9 +2,14 @@
 
 dest="$HOME/.bashrc"
 
+. $(gbl log)
+
 gblcmd_descr_add="Add bash.rc Library to the $dest of current user=$USER"
 gblcmd_add(){
     local brc_lib="$1"
+    local brc_inc="$G_BASH_LIB/bash.rc_libs/${brc_lib}.brc.sh"
+    [ ! -f $brc_inc ] && fatal "'$brc_lib' does not exist in $G_BASH_LIB/bash.rc_libs/"
+
     echo "adding '$brc_lib' to $dest"
     tpl -i $G_BASH_LIB/tpls/bashrc.tpl -r -I "$brc_lib" -o $dest -v "BASHRC_INC=$G_BASH_LIB/bash.rc_libs/${brc_lib}.brc.sh"
 }
