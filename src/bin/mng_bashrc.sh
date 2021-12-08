@@ -27,7 +27,7 @@ gblcmd_list(){
         local lib_name=${i:22}
         [ "$lib_name" != "" ] && echo $lib_name
     done
-    echo "Available for in GBashLib:"
+    echo "Available in GBashLib:"
     for i in $(ls $G_BASH_LIB/bash.rc_libs/)
     do
         local lib_name=${i:0:-7}
