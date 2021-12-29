@@ -20,6 +20,11 @@ It provides few shortcuts:
 - clone the code `git clone https://github.com/SmartSoftDev/GBashLib.git`
 - run `$./GBashLib/src/scripts/install.sh`
 
+Alternatively you could run which will install GBashLib and all recomended mng _bashrc,_inputrc and _gitconfig
+```
+wget -O - https://raw.githubusercontent.com/SmartSoftDev/GBashLib/master/src/scripts/install_all_goodies.sh | bash
+```
+
 # How to use it
 
 ## `j` - fast jump to your paths
