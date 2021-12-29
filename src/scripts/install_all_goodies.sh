@@ -4,7 +4,7 @@
 ghub_dir=$HOME/ghub/bash/
 gbl_dir=$ghub_dir/GBashLib
 set -e
-sudo apt install git
+sudo apt install -y git
 if [ ! -d $gbl_dir ] ; then
     mkdir -p $ghub_dir
     cd $ghub_dir
