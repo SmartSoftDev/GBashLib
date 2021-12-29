@@ -3,7 +3,8 @@
 # this script will install GBL from github, will clone it if it is not found in $HOME/ghub/bash/.
 ghub_dir=$HOME/ghub/bash/
 gbl_dir=$ghub_dir/GBashLib
-
+set -e
+sudo apt install git
 if [ ! -d $gbl_dir ] ; then
     mkdir -p $ghub_dir
     cd $ghub_dir
@@ -13,7 +14,6 @@ else
     cd $gbl_dir
     git pull
 fi
-
 ./src/scripts/install.sh
 mng_bashrc add git
 mng_bashrc add find
