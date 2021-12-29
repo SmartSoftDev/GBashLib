@@ -5,5 +5,6 @@ function rsync_dir(){
     if [ "$dst" == "" ] ; then
         dst="."
     fi
+    echo -e "Rsync $src to $dst"
     rsync -iPavzh "$src" "$dst"
 }

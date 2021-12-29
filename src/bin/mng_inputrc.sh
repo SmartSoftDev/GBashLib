@@ -23,9 +23,9 @@ gblcmd_remove(){
 }
 
 gblcmd_list(){
-    for i in $(cat $dest | grep "#GIT_BASH_LIB.gitconifg_include" | grep -v "_END")
+    for i in $(cat $dest | grep "#GIT_BASH_LIB.inputrc_include_" | grep -v "_END")
     do
-        local lib_name=${i:22}
+        local lib_name=${i:30}
         [ "$lib_name" != "" ] && echo $lib_name
     done
     echo "Available for in GBashLib:"
