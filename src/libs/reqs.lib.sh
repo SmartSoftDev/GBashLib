@@ -1,4 +1,4 @@
-
+# This library finds and builds sphynx documents
 #. $G_BASH_LIB/libs/reqs.lib.bsh
 
 SPHINXOPTS=-W
@@ -62,7 +62,7 @@ function reqs_show_all_singlehtml(){
 		browser_files="$browser_files ${path}_build/$SPHINX_DEFAULT_TARGET/index.html"
 	done
 	if [ "$browser" != "" ] ; then
-		$browser $browser_files
+		$browser $browser_files >/dev/null 2>&1 &
 	else
 		for i in $browser_files ; do
 			echo $(readlink -e "$i")

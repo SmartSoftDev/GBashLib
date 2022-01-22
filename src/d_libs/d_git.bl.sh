@@ -1,4 +1,3 @@
-
 . $(gbl git)
 
 gblcmd_descr_git_sync='run "git pull -p" on all configured repos in $(v list -vt git)'
