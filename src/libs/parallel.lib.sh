@@ -46,7 +46,6 @@ function wait_all(){
 
 function add_pid(){
     local pid="$1"
-    local name="$3"
     PARALLEL_PIDS+=($pid)
     [ "$2" != "" ] && PARALLEL_OUT_FILES[$pid]="$2"
     [ "$3" != "" ] && PARALLEL_NAME[$pid]="$3"
