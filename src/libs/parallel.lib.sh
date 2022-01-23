@@ -1,6 +1,5 @@
 # this feature uses BASH > v4
 
-# will contain the output file names
 declare -A PARALLEL_OUT_FILES
 declare -A PARALLEL_NAME
 declare -a PARALLEL_PIDS
@@ -58,5 +57,4 @@ function add_pid(){
             return $?
         fi
     }
-    declare -p PARALLEL_PIDS
 }
