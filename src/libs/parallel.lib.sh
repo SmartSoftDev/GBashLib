@@ -49,12 +49,12 @@ function add_pid(){
     PARALLEL_PIDS+=("$pid")
     [ "$2" != "" ] && PARALLEL_OUT_FILES[$pid]="$2"
     [ "$3" != "" ] && PARALLEL_NAME[$pid]="$3"
-    [ "$PARALLEL_MAX_PIDS" != "" ] && {
+    if [ "$PARALLEL_MAX_PIDS" != "" ] ; then
         # FIXME-SSD: monitor the pids from /proc/PID/ to see when anyone from the list did finish
         if [ ${#PARALLEL_PIDS[@]} -gt $PARALLEL_MAX_PIDS ] ; then
             echo "PARALLEL_MAX_PIDS=$PARALLEL_MAX_PIDS reached, waiting for first pid"
             wait_first_pid
             return $?
         fi
-    }
+    fi
 }
