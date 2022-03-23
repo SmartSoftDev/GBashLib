@@ -1,4 +1,6 @@
 #!/bin/bash
+export G_BASH_LIB=GBL_PATH
+
 function main(){
 	local cmd="$1"
   local path="$G_BASH_LIB/libs/$1.lib.sh"

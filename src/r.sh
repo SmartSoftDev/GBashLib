@@ -1,4 +1,6 @@
 #!/bin/bash
+export G_BASH_LIB=GBL_PATH
+
 [ "$1" == "-H" ] && {
 	HOME="$2"
 	shift
