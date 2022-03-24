@@ -1,4 +1,5 @@
 #!/bin/bash
+export G_BASH_LIB=GBL_PATH
 
 dest="$HOME/.gitconfig"
 lib_dir="gitconfig_libs"
