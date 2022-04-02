@@ -8,7 +8,7 @@ sudo ln -sf "$DIR/bin/uidgen.py" "/bin/uidgen"
 sudo ln -sf "$DIR/bin/auto_complete.py" "/bin/autoComplete"
 
 # binaries with GBL path
-sudo rm "/bin/d" "/bin/r" "/bin/gbl" "/bin/mng_bashrc" "/bin/mng_gitconfig" "/bin/mng_inputrc"
+sudo rm -f "/bin/d" "/bin/r" "/bin/gbl" "/bin/mng_bashrc" "/bin/mng_gitconfig" "/bin/mng_inputrc"
 sudo tpl -i "$DIR/d.sh" -o "/bin/d" -v GBL_PATH=$DIR
 sudo tpl -i "$DIR/r.sh" -o "/bin/r" -v GBL_PATH=$DIR
 sudo tpl -i "$DIR/gbl.sh" -o "/bin/gbl" -v GBL_PATH=$DIR

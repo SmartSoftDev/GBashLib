@@ -16,6 +16,7 @@ else
 fi
 ./src/scripts/install.sh
 export G_BASH_LIB=$gbl_dir/src
+
 mng_bashrc add git
 mng_bashrc add find
 mng_bashrc add git_prompt

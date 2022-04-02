@@ -117,6 +117,7 @@ if __name__ == "__main__":
     sp = argparse.ArgumentParser(description="Render a template with variables")
 
     sp.add_argument('-o', '--output', default=None, help="Output file. Default is stdout.")
+    sp.add_argument('-p', '--permissions', default=None, help="TODO: Octal output file permissions ex: 0755")
     sp.add_argument('-i', '--input', help="Template file. If not present stdin will be used")
     sp.add_argument('-r', '--replace', action='store_true', default=False,
                     help="replace content from file between match-start and match-end ")
