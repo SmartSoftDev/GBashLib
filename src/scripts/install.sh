@@ -22,5 +22,5 @@ tpl -i "$DIR/tpls/bashrc.tpl" -r -o "$HOME/.bashrc" -v "BASHRC_INC=$DIR/gbl_bash
 sudo tpl -i "$DIR/tpls/bashrc.tpl" -r -o /root/.bashrc -v "BASHRC_INC=$DIR/gbl_bashrc.inc.sh"
 
 # dependencies
-sudo -H apt install -y python3 python3-pip
+sudo -H apt install -y python3 python3-pip bsdmainutils
 sudo -H pip3 install --upgrade pyyaml tabulate python-gnupg
