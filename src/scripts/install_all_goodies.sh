@@ -1,4 +1,5 @@
 #!/bin/bash
+SCRIPT_DIR=$(readlink -e $(dirname "${BASH_SOURCE[0]}"))
 
 # this script will install GBL from github, will clone it if it is not found in $HOME/ghub/bash/.
 ghub_dir=$HOME/ghub/bash/
@@ -14,4 +15,4 @@ else
     cd $gbl_dir
     git pull
 fi
-./src/scripts/install_all.sh
+$SCRIPT_DIR/install_all.sh
