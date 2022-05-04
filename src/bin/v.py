@@ -148,9 +148,9 @@ def print_one(cfg, name, value, type_name=None, last=False):
     elif args.bash:
         s = type_name + name
         if args.value_only:
-            s = f'"{value}"'
+            s = '"{value}"'.format(value=value)
         elif not args.name_only:
-            s += f'="{value}"'
+            s += '="{value}"'.format(value=value)
     else:
         s = name
         if args.value_only:
