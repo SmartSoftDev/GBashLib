@@ -8,7 +8,7 @@ _find_sphinx_docs_sh_lib_location(){
     if [ -z "$SPHINX_DOCS_SH_LIB_LOCATION" ] ; then
         # search conf.py
         for c_path in $(find . -name conf.py -type l) ; do
-            local abs_path=$(dirname $(readlink -e $c_path))/$SPHINX_DOCS_SH_LIB
+            local abs_path=$(dirname $(readlink -f $c_path))/$SPHINX_DOCS_SH_LIB
             echo "check: $c_path $abs_path"
             if [ -e $abs_path ] ; then
                 SPHINX_DOCS_SH_LIB_LOCATION=$abs_path

@@ -1,5 +1,5 @@
 #!/bin/bash
-DIR=$(readlink -e $(dirname "${BASH_SOURCE[0]}")/../)
+DIR=$(readlink -f $(dirname "${BASH_SOURCE[0]}")/../)
 set -e
 
 # bashrc for USER and root
