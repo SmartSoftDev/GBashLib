@@ -22,5 +22,8 @@ alias pull='git pull -p'
 source /usr/share/bash-completion/completions/git
 
 
-complete -o bashdefault -o default -o nospace -F _git g 2>/dev/null \
-        || complete -o default -o nospace -F _git g
+if type complete >/dev/null 2>&1 ; then
+
+    complete -o bashdefault -o default -o nospace -F _git g 2>/dev/null \
+            || complete -o default -o nospace -F _git g
+fi
