@@ -1,7 +1,5 @@
 export G_BASH_LIB=$(dirname "${BASH_SOURCE[0]}")
 
-. $(gbl ip)
-. $(gbl log)
 eval "$(r _print_autocomplete r)"
 eval "$(d _print_autocomplete d)"
 
@@ -16,6 +14,7 @@ _gbl_autoComplete(){
     #echo $COMP_CWORD
     COMPREPLY=( $(compgen -W "$(autoComplete _get $COMP_CWORD ${COMP_WORDS[@]} )") )
 }
+
 if type complete >/dev/null 2>&1 ; then
     ac_list=$(autoComplete _list)
     for ac in ${ac_list[@]} ; do

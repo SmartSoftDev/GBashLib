@@ -318,19 +318,15 @@ def main():
             else:
                 value = ""
             if len(value) == 0:
-                # if there is no value, let's delete the key as well
-                if name in config:
-                    del config[name]
-                    save_config()
-            else:
-                if name in config:
-                    # value exists just update
-                    if cfg.args.append:
-                        # if is append operation construct
-                        value = config[name] + cfg.args.separator + value
-                # save the value
-                config[name] = value
-                save_config()
+                raise Exception("Cannot set empty value")
+            if name in config:
+                # value exists just update
+                if cfg.args.append:
+                    # if is append operation construct
+                    value = config[name] + cfg.args.separator + value
+            # save the value
+            config[name] = value
+            save_config()
 
     elif args.cmd == "enc":
         gpg = _init_gpg(args.verbose > 0)

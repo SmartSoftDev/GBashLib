@@ -1,4 +1,8 @@
+
 # 's' ssh shortcut !
+
+. $(gbl ip)
+
 _gbl_my_ssh_usage(){
     echo -e "usage to ssh: $COLOR_GREEN s SSH_ALIAS$COLOR_NONE\n\
 usage to set: $COLOR_GREEN s set SSH_ALIAS IP$COLOR_NONE\n\
@@ -12,16 +16,27 @@ usage to list: $COLOR_GREEN s$COLOR_NONE or $COLOR_GREEN s list$COLOR_NONE "
 _gbl_my_ssh(){
     local isSCP=0
     case "$1" in
-    "get")
-        v get -t ssh $2
-        return 0;
-    ;;
     "del")
         shift
         v del -t ssh $@
         return 0
     ;;
     "set")
+        # let's parse the options
+        local ProxyJump=""
+        while [[ "$2" == --* ]] ; do
+        case "$2" in
+        "--ProxyJump")
+            ProxyJump="ProxyJump=$3"
+            shift
+            shift
+            ;;
+        *)
+            echo "Unexpeted $2 option";
+            return
+            ;;
+        esac
+        done
         local alias=$2
         local ip=$3
         if [ -z "$alias" ] || [ -z "$ip" ] ; then
@@ -29,25 +44,26 @@ _gbl_my_ssh(){
             _gbl_my_ssh_usage
             return 1
         fi
-        echo "ip: $ip"
+        echo "alias: $alias ip: $ip"
         # we must save the format user@ip
-        local arr=(${ip//@/ })
         local user="root"
         local port=22
-        parse_user_ip_port $ip
+        parse_user_ip_port "$ip"
 
         ip=$_IP_ADDR
         [ "$_IP_PORT" != "" ] && port=$_IP_PORT
         [ "$_IP_USER" != "" ] && user=$_IP_USER
 
 
-        tpl -i "$G_BASH_LIB/tpls/ssh_host.tpl" -r -I "_$alias" -o "$HOME/.ssh/config" -v "ALIAS=$alias" "IP=$ip" "USER=$user" "PORT=$port"
+        tpl -i "$G_BASH_LIB/tpls/ssh_host.tpl" -r -I "_$alias" -o "$HOME/.ssh/config" \
+            -v "ALIAS=$alias" "IP=$ip" "USER=$user" "PORT=$port" "VALUE_$ProxyJump"
         #FIXME-SSD: when TPL will support permission mode remove this one
         chmod go-w $HOME/.ssh/config
-        local save_ip=
-        v set -t ssh "$alias=$user@$ip:$port"
+        local save_ip="$alias=$user@$ip:$port"
+        [ "$ProxyJump" != "" ] && save_ip="$save_ip $ProxyJump"
+        v set -t ssh "$save_ip"
 
-        ssh-copy-id -p "$port" "$user@$ip" || {
+        ssh-copy-id $alias || {
             echo "could not copy ssh-id! FAIL!"
         }
         return 0;
@@ -58,15 +74,12 @@ _gbl_my_ssh(){
     ;;
     esac
     local alias="$1"
-    local remote_src=
-    local local_dst=
-
     [  -z "$alias" ] && {
         _gbl_my_ssh_usage
         return 0
     }
 
-    local ip=$(v get -t ssh "$alias" )
+    local ip=$(v get -t ssh "$alias")
     [ "$ip" == "" ] && {
         ip=($(v list -t ssh -n | grep "$alias"))
         if [ ${#ip[@]} == 0 ] ; then
@@ -81,12 +94,17 @@ _gbl_my_ssh(){
             ip=$(v get -t ssh "$ip" )
         fi
     }
+    ip=($ip)
     parse_user_ip_port "$ip"
 
     ip_txt="$_IP_USER@$_IP_ADDR"
     [ "$_IP_PORT" != "22" ] && ip_txt="-p $_IP_PORT $ip_txt"
+    unset ip[0]
+    for ssh_option in ${ip[@]} ; do
+        ip_txt="-o$ssh_option $ip_txt"
+    done
 
-    echo -e "\t $COLOR_GREEN ssh $ip_txt $COLOR_NONE $txt_port"
+    echo -e "\t $COLOR_GREEN ssh $ip_txt $COLOR_NONE"
     ssh $alias
 }
 #gbl_Bash_Auto_Complete
@@ -96,14 +114,17 @@ _gbl_bac_ssh_alias(){
     conns="$(v list -nt ssh | grep "$cur")"
     if [ "$COMP_CWORD" -gt 1 ] ; then
         case "$prev" in
-            "get"|"add"|"update")
+            "set")
+                conns="$(echo -e "--ProxyJump\n" | grep "$cur") "
+            ;;
+            "del"|"list")
             ;;
             *)
                 conns= ;
             ;;
         esac
     else
-        conns="$conns $(echo -e "get\nadd\nupdate\nlist" | grep "$cur") "
+        conns="$conns $(echo -e "set\ndel\nlist" | grep "$cur") "
     fi
 
 
