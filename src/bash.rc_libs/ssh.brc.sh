@@ -2,6 +2,7 @@
 # 's' ssh shortcut !
 
 . $(gbl ip)
+. $(gbl log)
 
 _gbl_my_ssh_usage(){
     echo -e "usage to ssh: $COLOR_GREEN s SSH_ALIAS$COLOR_NONE\n\
@@ -32,8 +33,7 @@ _gbl_my_ssh(){
             shift
             ;;
         *)
-            echo "Unexpeted $2 option";
-            return
+            fatal "Unexpeted $2 option";
             ;;
         esac
         done
