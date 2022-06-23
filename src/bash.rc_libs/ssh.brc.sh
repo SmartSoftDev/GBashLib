@@ -10,7 +10,7 @@ usage to set: $COLOR_GREEN s set SSH_ALIAS IP$COLOR_NONE\n\
 usage to del: $COLOR_GREEN s del SSH_ALIAS $COLOR_NONE\n\
 usage to list: $COLOR_GREEN s$COLOR_NONE or $COLOR_GREEN s list$COLOR_NONE "
 
-    v list -dt ssh | column -t -n
+    v list -dt ssh
 }
 
 
@@ -69,7 +69,7 @@ _gbl_my_ssh(){
         return 0;
     ;;
     "list")
-        v list -dt ssh | column -t -n
+        v list -dt ssh
         return 0
     ;;
     esac

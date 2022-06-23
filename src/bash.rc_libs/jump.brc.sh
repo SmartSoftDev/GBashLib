@@ -19,7 +19,7 @@ _gbl_my_jump(){
         return 0
     ;;
     "list")
-        v list -dt path | column -t -n
+        v list -dt path
         return 0
     ;;
     esac
@@ -29,7 +29,7 @@ _gbl_my_jump(){
 usage to set: $COLOR_GREEN j set J_ALIAS PATH$COLOR_NONE\n\
 usage to del: $COLOR_GREEN j del J_ALIAS $COLOR_NONE\n\
 usage to list: $COLOR_GREEN j$COLOR_NONE or $COLOR_GREEN j list$COLOR_NONE "
-        v list -dt path | column -t -n
+        v list -dt path
         return 0
     }
     local location

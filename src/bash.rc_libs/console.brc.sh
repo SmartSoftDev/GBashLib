@@ -15,7 +15,7 @@ usage to set: $COLOR_GREEN c set CONSOLE_ALIAS IP$COLOR_NONE\n\
 usage to del: $COLOR_GREEN c del CONSOLE_ALIAS $COLOR_NONE\n\
 usage to list: $COLOR_GREEN c $COLOR_NONE or $COLOR_GREEN c list$COLOR_NONE "
 
-    v list -dt console | column -t -n
+    v list -dt console
     i=0
     for c in  $(_list_sorted_console) ; do
         echo "$i -> $(basename $c) : $(dirname $(dirname $(dirname $c)))"
@@ -74,7 +74,7 @@ _gbl_my_console(){
         return 0;
     ;;
     "list")
-        v list -dt console | column -t -n
+        v list -dt console
         return 0
     ;;
     esac
