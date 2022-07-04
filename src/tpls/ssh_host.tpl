@@ -6,4 +6,4 @@ port=PORT
 user=USER
 ServerAliveInterval=60
 ServerAliveCountMax=2
-ProxyJump=VALUE_ProxyJump
+VALUE_PJ

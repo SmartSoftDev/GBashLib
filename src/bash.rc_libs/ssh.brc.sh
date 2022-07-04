@@ -56,7 +56,7 @@ _gbl_my_ssh(){
 
 
         tpl -i "$G_BASH_LIB/tpls/ssh_host.tpl" -r -I "_$alias" -o "$HOME/.ssh/config" \
-            -v "ALIAS=$alias" "IP=$ip" "USER=$user" "PORT=$port" "VALUE_$ProxyJump"
+            -v "ALIAS=$alias" "IP=$ip" "USER=$user" "PORT=$port" "VALUE_PJ=$ProxyJump"
         #FIXME-SSD: when TPL will support permission mode remove this one
         chmod go-w $HOME/.ssh/config
         local save_ip="$alias=$user@$ip:$port"
