@@ -13,7 +13,7 @@ function add_git(){
 function check_path(){
 	local p="$1"
 	[ "$p" == "" ] && return 1
-	ABS_PATH=$(readlink -e $p)
+	ABS_PATH=$(readlink -f $p)
 	[ -z "$ABS_PATH" ] && return 1
 	[ ! -e "$ABS_PATH" ] && return 1
 	return 0

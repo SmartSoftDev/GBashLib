@@ -22,7 +22,7 @@ function reqs_build_one(){
         target="$2"
     fi
     local this_dir="$( dirname "${BASH_SOURCE[0]}" )"
-    local puml_exec="$(readlink -e "$this_dir/../../tools/plantuml.jar")"
+    local puml_exec="$(readlink -f "$this_dir/../../tools/plantuml.jar")"
     echo "Start building document $path"
     for pfile in $(find -L $path -name "*.puml" -type f) ; do
         if [ "$pfile" -nt "$pfile.png" ] ;then
@@ -65,7 +65,7 @@ function reqs_show_all_singlehtml(){
         $browser $browser_files >/dev/null 2>&1 &
     else
         for i in $browser_files ; do
-            echo $(readlink -e "$i")
+            echo $(readlink -f "$i")
         done
     fi
 }

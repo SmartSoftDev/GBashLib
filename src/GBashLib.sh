@@ -36,7 +36,7 @@ EOM
 		fi
 		cmds_text+="\t  ${cmd_name} ${cmd_args} $cmd_descr\n"
 	done
-	echo -e "$cmds_text" | column -t -n | tr "!+!" " "
+	echo -e "$cmds_text" | tr "!+!" " "
 
 	echo "";
 	echo "$G_USAGE_SFX"

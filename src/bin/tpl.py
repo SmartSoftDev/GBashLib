@@ -14,7 +14,8 @@ def process_line(fi_line):
     cfg.fo.write(fi_line)
 
 
-def read_from_fo_replace(until_l):
+def read_from_fo_replace(until_l=None, strip_line=False):
+    """reads from fo_repl and writes it to fo until "unitil_l" line is matched (if given)"""
     if not cfg.fo_repl:
         return
     last_line_has_new_line = False
@@ -24,10 +25,14 @@ def read_from_fo_replace(until_l):
             break
         # print "read: "+l
         if until_l:
-            if l == until_l:
-                break
+            if strip_line:
+                if l.strip() == until_l:
+                    break
+            else:
+                if l == until_l:
+                    break
         cfg.fo.write(l)
-        last_line_has_new_line = l.endswith('\n')
+        last_line_has_new_line = l.endswith("\n")
     return last_line_has_new_line
 
 
@@ -49,9 +54,9 @@ def main():
     cfg.vars = dict()
     if cfg.args.vars:
         for v in cfg.args.vars:
-            v = v.split('=', 1)
+            v = v.split("=", 1)
             name = v[0].strip()
-            value = ''
+            value = ""
             if len(v) > 1:
                 value = v[1]
 
@@ -60,8 +65,8 @@ def main():
     if not cfg.args.output:
         cfg.fo = sys.stdout
     else:
-        if cfg.args.replace:
-            cfg.foPath = cfg.args.output + '.temp'
+        if cfg.args.replace or cfg.args.at_position:
+            cfg.foPath = cfg.args.output + ".temp"
             cfg.fo_replPath = cfg.args.output
             cfg.fo = open(cfg.foPath, "w")
             if os.path.exists(cfg.fo_replPath):
@@ -77,7 +82,10 @@ def main():
         cfg.fi = open(cfg.args.input, "r")
     # read the input file (template)
     count = 0
-    repl_id = ''
+    repl_id = ""
+    if cfg.args.at_position:
+        # write from fo_repl to fo until wwe find at_position string
+        read_from_fo_replace(cfg.args.at_position, strip_line=True)
     while True:
         fi_line = cfg.fi.readline()
         if not fi_line:
@@ -88,9 +96,9 @@ def main():
                 repl_id = repl_id.rstrip() + cfg.args.id + "\n"
             # read from output until we detect line "repl_id" which is the start of portion to be replaced.
             has_new_line_at_the_end = read_from_fo_replace(repl_id)
-            # we need to make sure that repl_id is writtent at the BEGINNING of the LINE
+            # we need to make sure that repl_id is written at the BEGINNING of the LINE
             if not has_new_line_at_the_end:
-                cfg.fo.write('\n'+repl_id)
+                cfg.fo.write("\n" + repl_id)
             else:
                 cfg.fo.write(repl_id)
         else:
@@ -100,31 +108,52 @@ def main():
         count += 1
 
     if cfg.args.replace:
+        # write the END tag to fo
         repl_id = repl_id.rstrip() + "_END\n"
         cfg.fo.write(repl_id)
-        skip_from_fo_replace(repl_id)  # skip from replace pina gasim
-        read_from_fo_replace(None)
+        skip_from_fo_replace(repl_id)  # skip from fo_repl until the "END TAG"
+
+    if cfg.args.replace or cfg.args.at_position:
+        # continue copy from fo_repl to fo until the end of the file
+        read_from_fo_replace()
         if cfg.fo_repl:
             cfg.fo_repl.close()
     cfg.fi.close()
     cfg.fo.close()
 
-    if cfg.args.replace:
+    if cfg.args.replace or cfg.args.at_position:
         os.rename(cfg.foPath, cfg.fo_replPath)
 
 
 if __name__ == "__main__":
     sp = argparse.ArgumentParser(description="Render a template with variables")
 
-    sp.add_argument('-o', '--output', default=None, help="Output file. Default is stdout.")
-    sp.add_argument('-i', '--input', help="Template file. If not present stdin will be used")
-    sp.add_argument('-r', '--replace', action='store_true', default=False,
-                    help="replace content from file between match-start and match-end ")
-    sp.add_argument('-d', '--delete', action='store_true', default=False,
-                    help="delete content from file between match-start and match-end")
+    sp.add_argument("-o", "--output", default=None, help="Output file. Default is stdout.")
+    sp.add_argument("-p", "--permissions", default=None, help="TODO: Octal output file permissions ex: 0755")
+    sp.add_argument("-i", "--input", help="Template file. If not present stdin will be used")
+    sp.add_argument(
+        "-r",
+        "--replace",
+        action="store_true",
+        default=False,
+        help="replace content from file between match-start and match-end ",
+    )
+    sp.add_argument(
+        "-a",
+        "--at_position",
+        metavar="TO_REPLACE",
+        help="Insert the TPL content at position containing TO_REPLACE. (matches only full lines)",
+    )
+    sp.add_argument(
+        "-d",
+        "--delete",
+        action="store_true",
+        default=False,
+        help="delete content from file between match-start and match-end",
+    )
 
-    sp.add_argument('-v', '--vars', type=str, nargs="+", help='Variables to be replaces inside tpl. NAME=VALUE')
-    sp.add_argument('-I', '--id', default=None, type=str, help="Element id to be replaced. used in combination with -r")
+    sp.add_argument("-v", "--vars", type=str, nargs="+", help="Variables to be replaces inside tpl. NAME=VALUE")
+    sp.add_argument("-I", "--id", default=None, type=str, help="Element id to be replaced. used in combination with -r")
 
     cfg.args = sp.parse_args()
     main()

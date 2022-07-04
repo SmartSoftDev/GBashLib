@@ -6,3 +6,4 @@ port=PORT
 user=USER
 ServerAliveInterval=60
 ServerAliveCountMax=2
+VALUE_PJ
