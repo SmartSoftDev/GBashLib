@@ -26,16 +26,16 @@ _gbl_my_ssh(){
         # let's parse the options
         local ProxyJump=""
         while [[ "$2" == --* ]] ; do
-        case "$2" in
-        "--ProxyJump")
-            ProxyJump="ProxyJump=$3"
-            shift
-            shift
-            ;;
-        *)
-            fatal "Unexpeted $2 option";
-            ;;
-        esac
+            case "$2" in
+            "--ProxyJump")
+                ProxyJump="ProxyJump=$3"
+                shift
+                shift
+                ;;
+            *)
+                fatal "Unexpeted $2 option";
+                ;;
+            esac
         done
         local alias=$2
         local ip=$3
@@ -73,6 +73,19 @@ _gbl_my_ssh(){
         return 0
     ;;
     esac
+    # let's parse the options
+    local opt_wait=""
+    while [[ "$1" == --* ]] ; do
+        case "$1" in
+        "--wait")
+            opt_wait="yes"
+            shift
+            ;;
+        *)
+            fatal "Unexpeted $1 option";
+            ;;
+        esac
+    done
     local alias="$1"
     [  -z "$alias" ] && {
         _gbl_my_ssh_usage
@@ -103,15 +116,27 @@ _gbl_my_ssh(){
     for ssh_option in ${ip[@]} ; do
         ip_txt="-o$ssh_option $ip_txt"
     done
-
     echo -e "\t $COLOR_GREEN ssh $ip_txt $COLOR_NONE"
+    [ "$opt_wait" == "yes" ] && {
+        echo -e "\t  wait for SSH ..."
+        SECONDS=0
+
+        while true ; do
+            ssh -o ConnectTimeout=2 -t $1 "true" > /dev/null 2>&1  || {
+                echo -n " ."
+                continue
+            }
+            echo -e "$COLOR_GREEN ssh is up! $COLOR_NONE in $SECONDS sec"
+            break
+        done
+    }
+
     ssh $alias
 }
 #gbl_Bash_Auto_Complete
 _gbl_bac_ssh_alias(){
     local cur=${COMP_WORDS[COMP_CWORD]}
     local prev=${COMP_WORDS[COMP_CWORD-1]}
-    conns="$(v list -nt ssh | grep "$cur")"
     if [ "$COMP_CWORD" -gt 1 ] ; then
         case "$prev" in
             "set")
@@ -120,13 +145,21 @@ _gbl_bac_ssh_alias(){
             "del"|"list")
             ;;
             *)
-                conns= ;
+                conns="$(v list -nt ssh -i -f "$cur")"
             ;;
         esac
     else
-        conns="$conns $(echo -e "set\ndel\nlist" | grep "$cur") "
+        if [ "${cur:0:1}" == "-" ] ; then
+            conns="--wait"
+        elif [ "${cur:0:2}" == "--" ] ; then
+            for i in $(echo -e "wait\n" | grep "${cur:2}") ; do
+                conns="$conns --$i"
+            done
+        else
+            conns="$(v list -nt ssh -i -f "$cur")"
+            conns="$conns $(echo -e "set\ndel\nlist\n--wait\n" | grep "$cur")"
+        fi
     fi
-
 
     COMPREPLY=( $(compgen -W "$conns") )
 } ;
