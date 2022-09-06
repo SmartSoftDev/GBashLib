@@ -32,6 +32,7 @@ function prompt_eval() {
 
 	fi
 	PS1="${prompt}"
+    echo -ne "\033]0;${HOSTNAME}:$(__git_ps1 " (%s)") ${PWD}\007"
 }
 
 if [[ -e /etc/bash_completion.d/git-prompt ]]; then
@@ -52,6 +53,5 @@ case $PROMPT_CONFIG in
 	"no_change")
 		;;
 	*)
-		prompt_eval never
-		PROMPT_COMMAND='echo -ne "\033]0;${HOSTNAME}:$(__git_ps1 " (%s)") ${PWD}\007"';;
+		PROMPT_COMMAND="prompt_eval never";;
 esac
