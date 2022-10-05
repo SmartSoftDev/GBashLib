@@ -40,9 +40,9 @@ function read_config(){
     # config priority: bash config -> v -> hardcoded
     which v > /dev/null 2>&1
     if [ ${?} -eq 0 ]; then
-        PROMPT_CONFIG=${PROMPT_CONFIG:-$(v get PROMPT_CONFIG)}
-        PROMPT_MIN_CHARS=${PROMPT_MIN_CHARS:-$(v get PROMPT_MIN_CHARS)}
-        PROMPT_MAX_LEN=${PROMPT_MAX_LEN:-$(v get PROMPT_MAX_LEN)}
+        PROMPT_CONFIG=${PROMPT_CONFIG:-$(v get -t config PROMPT_CONFIG)}
+        PROMPT_MIN_CHARS=${PROMPT_MIN_CHARS:-$(v get -t config PROMPT_MIN_CHARS)}
+        PROMPT_MAX_LEN=${PROMPT_MAX_LEN:-$(v get -t config PROMPT_MAX_LEN)}
     fi
     PROMPT_CONFIG=${PROMPT_CONFIG:-$DEFAULT_PROMPT_CONFIG}
     PROMPT_MIN_CHARS=${PROMPT_MIN_CHARS:-$DEFAULT_PROMPT_MIN_CHARS}
