@@ -124,6 +124,7 @@ _gbl_my_ssh(){
         while true ; do
             ssh -o ConnectTimeout=2 -t $1 "true" > /dev/null 2>&1  || {
                 echo -n " ."
+                sleep 1
                 continue
             }
             echo -e "$COLOR_GREEN ssh is up! $COLOR_NONE in $SECONDS sec"
