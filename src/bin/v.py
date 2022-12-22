@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-v tool has following features:
+v tool has the following features:
 * reads / stores configuration values in yaml files
 * can read values from single location ($HOME/.v.yaml)
 * can read from ./v.yaml
 * can read and combine recursively from , ./v.yaml, ../v.yaml, ../../v.yaml ... (ONLY read, write does not work
 recursively)
-* can switch file_name from v.yaml to v.{NAME}.yaml depending of argument or environ variable
+* can switch file_name from v.yaml to v.{NAME}.yaml depending on argument or environ variable
 * can store KEY=VALUE pairs, or KEY=VALUE in a special "TYPE" (group)
 
 IMPORTANT: this file must support python3.5 (no f"" is allowed)

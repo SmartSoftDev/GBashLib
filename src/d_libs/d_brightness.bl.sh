@@ -1,6 +1,6 @@
 . $(gbl log)
 
-function _set_brigtness(){
+function _set_brightness(){
     local value="$1" output
     output="$(v get -t config MONITOR_OUTPUT)"
     [ "x$output" == "x" ] && fatal "please set the v set -t config MONITOR_OUTPUT=?"
@@ -10,5 +10,5 @@ function _set_brigtness(){
 }
 gblcmd_descr_set_brightness='Sets brightness of "xrands --output" configured in "$(v get -t config MONITOR_OUTPUT)"'
 gblcmd_set_brightness(){
-    _set_brigtness "$1"
+    _set_brightness "$1"
 }

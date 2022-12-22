@@ -33,7 +33,7 @@ _gbl_my_ssh(){
                 shift
                 ;;
             *)
-                fatal "Unexpeted $2 option";
+                fatal "Unexpected $2 option";
                 ;;
             esac
         done
@@ -82,7 +82,7 @@ _gbl_my_ssh(){
             shift
             ;;
         *)
-            fatal "Unexpeted $1 option";
+            fatal "Unexpected $1 option";
             ;;
         esac
     done
@@ -99,7 +99,7 @@ _gbl_my_ssh(){
             echo -e "shh is $COLOR_RED NOT-SET $COLOR_NONE use '$COLOR_GREEN s set $alias IP$COLOR_NONE'"
             return 1
     elif (( ${#ip[@]} > 1 )) ; then
-            echo -e "ip $alias is ambigues: (${ip[@]})"
+            echo -e "ip $alias is ambiguous: (${ip[@]})"
             return 1
         else
             echo "$alias -> $ip"
@@ -118,15 +118,19 @@ _gbl_my_ssh(){
     done
     echo -e "\t $COLOR_GREEN ssh $ip_txt $COLOR_NONE"
     [ "$opt_wait" == "yes" ] && {
-        echo -e "\t  wait for SSH ..."
+        printf "\t  wait for SSH ..."
         SECONDS=0
-
+        local counter=0
+        local progress=( '.      ' '. .    ' '. . .  ' '. . . .')
         while true ; do
             ssh -o ConnectTimeout=2 -t $1 "true" > /dev/null 2>&1  || {
-                echo -n " ."
-                sleep 1
+                printf "%s" "${progress[$(( counter%4 ))]}"
+                sleep 2
+                printf '\b\b\b\b\b\b\b'
+                (( counter += 1))
                 continue
             }
+            echo "."
             echo -e "$COLOR_GREEN ssh is up! $COLOR_NONE in $SECONDS sec"
             break
         done
