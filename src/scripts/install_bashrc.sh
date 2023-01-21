@@ -19,6 +19,7 @@ mng_bashrc add console
 mng_gitconfig add "alias"
 mng_gitconfig add http_credentials
 mng_gitconfig add push_pull
+mng_gitconfig add vscode_as_editor
 
 mng_inputrc add up_down_search
 mng_inputrc add usefull
