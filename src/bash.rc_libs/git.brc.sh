@@ -20,6 +20,7 @@ alias push='git push'
 alias pull='git pull -p'
 
 source /usr/share/bash-completion/completions/git
+
 fn_exists() {
     for fn_name in $@ ; do 
         if ! type $fn_name >/dev/null 2>&1 ; then
