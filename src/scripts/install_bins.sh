@@ -6,6 +6,8 @@ sudo ln -sf "$DIR/bin/v.py" "/bin/v"
 sudo ln -sf "$DIR/bin/tpl.py" "/bin/tpl"
 sudo ln -sf "$DIR/bin/uidgen.py" "/bin/uidgen"
 sudo ln -sf "$DIR/bin/auto_complete.py" "/bin/autoComplete"
+sudo ln -sf "$DIR/bin/to_json_yaml.py" "/bin/to_json_yaml"
+
 
 # binaries with GBL path
 sudo rm -f "/bin/d" "/bin/r" "/bin/gbl" "/bin/mng_bashrc" "/bin/mng_gitconfig" "/bin/mng_inputrc"
