@@ -21,9 +21,22 @@ alias pull='git pull -p'
 
 source /usr/share/bash-completion/completions/git
 
+fn_exists() {
+    for fn_name in $@ ; do 
+        if ! type $fn_name >/dev/null 2>&1 ; then
+            return 1
+        fi
+    done
+    return 0
+}
 
-if type complete >/dev/null 2>&1 ; then
-
-    complete -o bashdefault -o default -o nospace -F _git g 2>/dev/null \
-            || complete -o default -o nospace -F _git g
+if fn_exists complete ; then
+    if fn_exists __git_complete __git_main ; then
+        # ubuntu 22.04
+        __git_complete g __git_main
+    else
+        # older versions
+        complete -o bashdefault -o default -o nospace -F _git g 2>/dev/null \
+                || complete -o default -o nospace -F _git g
+    fi
 fi

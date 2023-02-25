@@ -3,7 +3,7 @@ pyclean () {
     find . -type d -name "__pycache__" -delete
 }
 
-alias p='bpython'
+alias bp='bpython'
 alias pytest3='python3 -m pytest -vvvv -o log_cli=true -p no:cacheprovider'
 
 # For python3 user libraries

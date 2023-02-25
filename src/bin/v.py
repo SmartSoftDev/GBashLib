@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-v tool has following features:
+v tool has the following features:
 * reads / stores configuration values in yaml files
 * can read values from single location ($HOME/.v.yaml)
 * can read from ./v.yaml
 * can read and combine recursively from , ./v.yaml, ../v.yaml, ../../v.yaml ... (ONLY read, write does not work
 recursively)
-* can switch file_name from v.yaml to v.{NAME}.yaml depending of argument or environ variable
+* can switch file_name from v.yaml to v.{NAME}.yaml depending on argument or environ variable
 * can store KEY=VALUE pairs, or KEY=VALUE in a special "TYPE" (group)
 
 IMPORTANT: this file must support python3.5 (no f"" is allowed)
@@ -133,6 +133,22 @@ def save_config():
 
 def print_one(cfg, name, value, type_name=None, last=False):
     args = cfg.args
+    # perform filter by name or value if given
+    if args.find_in_names:
+        if args.insensitive_case:
+            if args.find_in_names.upper() not in name.upper():
+                return
+        else:
+            if args.find_in_names not in name:
+                return
+    if args.find_in_values:
+        if args.insensitive_case:
+            if args.find_in_values.upper() not in value.upper():
+                return
+        else:
+            if args.find_in_values not in value:
+                return
+
     if type_name:
         type_name += "__"
     else:
@@ -233,8 +249,11 @@ def main():
     sp.add_argument("-a", "--all", action="store_true", default=False, help="lists name=value for all types")
     sp.add_argument("-d", "--decorate", action="store_true", default=False, help="always decorate for terminal")
     sp.add_argument("-n", "--name-only", action="store_true", default=False, help="show only names")
+    sp.add_argument("-f", "--find-in-names", help="search in the names")
+    sp.add_argument("-F", "--find-in-values", help="search in the values")
+    sp.add_argument("-i", "--insensitive-case", action="store_true", default=False, help="search with case insensitive")
     sp.add_argument("-v", "--value-only", action="store_true", default=False, help="show only values")
-    sp.add_argument("-s", "--separator", default="\n", help="set separator string ")
+    sp.add_argument("-s", "--separator", default="\n", help="set separator string")
     sp.add_argument("-b", "--bash", action="store_true", default=False, help="prints it for bash interpretation")
     sp.add_argument(
         "-r",
