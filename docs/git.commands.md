@@ -29,3 +29,15 @@
 * `g l`= log --pretty=format:'%C(dim)%h%Creset  %C(green)%s%Creset %C(yellow)<%an>%Creset %C(dim)%cr%Creset %C(blue)%D%Creset' --name-only
 * `g hist` = log --pretty=format:\"%h-%ar| %Cgreen%d%Creset %s [%Cblue%an%Creset]\" --graph --date=short --decorate=short
 * `g m`= merge
+
+
+## Git short tasks
+
+* g co {branch_name}  -  checkout a branch
+* g co -b {branch_name}  -  creates a new branch
+* push - git push 
+* pull - git pull
+* push -f - git push -f
+* git ci -a --amend  - commit all changes as amend to the previous commit
+* git ci -am "{commit title}" - creates a new commit
+* 
