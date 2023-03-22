@@ -72,7 +72,7 @@ Before you can ssh to your preferred host you have to add it to `s` like this:
 
 - But when the `--template path/to/template.tpl` argument is given then it will be used. This is useful if you have to
   configure ssh differently for different types of hosts.
-- `s` supports proxyJump option like `s set ProxyJump=proxyHostAlias my_alias root@192.168.1.1`
+- `s` supports proxyJump option like `s set --ProxyJump proxyHostAlias my_alias root@192.168.1.1`
 - `s` supports waiting for the Alias to come online when trying to connect to SSH: `s --wait my_alias`
 
 ## `c` - serial console with one letter and intelligent autocomplete
