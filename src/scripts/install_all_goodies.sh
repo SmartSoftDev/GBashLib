@@ -2,7 +2,7 @@
 SCRIPT_DIR=$(readlink -f $(dirname "${BASH_SOURCE[0]}"))
 
 # this script will install GBL from github, will clone it if it is not found in $HOME/ghub/bash/.
-ghub_dir=$HOME/ghub/bash/
+ghub_dir=$HOME/ghub/ssd/
 gbl_dir=$ghub_dir/GBashLib
 
 set -e
