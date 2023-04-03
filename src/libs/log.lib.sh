@@ -19,7 +19,7 @@ COLOR_GRAY='\e[0;30m'
 COLOR_LIGHT_GRAY='\e[0;37m'
 
 fatal(){
-	echo -e "\nFATAL:\t $@\n\n" 1>&2
+	echo -e "$COLOR_RED\nFATAL:\t $@\n\n$COLOR_NONE" 1>&2
 	exit 1;
 }
 
@@ -33,6 +33,16 @@ err(){
 
 wrn(){
 	echo -e "WARN:\t $@"
+}
+log_error(){
+	echo -e "$COLOR_RED ERROR: $@ $COLOR_NONE "
+}
+
+log_warning(){
+	echo -e "$COLOR_YELLOW WARNING: $COLOR_NONE $@"
+}
+log_success(){
+	echo -e "$COLOR_GREEN $@ $COLOR_NONE"
 }
 
 function __error_report(){
