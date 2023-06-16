@@ -13,8 +13,8 @@ _gbl_my_console_usage(){
     echo -e "usage to console: $COLOR_GREEN c CONSOLE_ALIAS$COLOR_NONE\n\
 usage to set: $COLOR_GREEN c set CONSOLE_ALIAS IP$COLOR_NONE\n\
 usage to del: $COLOR_GREEN c del CONSOLE_ALIAS $COLOR_NONE\n\
-usage to list: $COLOR_GREEN c $COLOR_NONE or $COLOR_GREEN c list$COLOR_NONE "
-
+usage to list: $COLOR_GREEN c $COLOR_NONE or $COLOR_GREEN c list$COLOR_NONE \n\
+FYI: to exit Ctrl + a then k"
     v list -dt console
     i=0
     for c in  $(_list_sorted_console) ; do

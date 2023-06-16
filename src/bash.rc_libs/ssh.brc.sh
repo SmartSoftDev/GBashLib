@@ -7,6 +7,7 @@
 _gbl_my_ssh_usage(){
     echo -e "usage to ssh: $COLOR_GREEN s SSH_ALIAS$COLOR_NONE\n\
 usage to set: $COLOR_GREEN s set SSH_ALIAS IP$COLOR_NONE\n\
+usage to set: $COLOR_GREEN s set --ProxyJump proxyHostAlias some_user@some_host SSH_ALIAS IP$COLOR_NONE\n\
 usage to del: $COLOR_GREEN s del SSH_ALIAS $COLOR_NONE\n\
 usage to list: $COLOR_GREEN s$COLOR_NONE or $COLOR_GREEN s list$COLOR_NONE "
 

@@ -17,7 +17,7 @@ alias gdt='git difftool -d origin/dev .'
 alias ga='git add'
 alias b='git_branch'
 alias push='git push'
-alias pull='git pull -p'
+alias pull='git fetch --prune --prune-tags && git pull'
 
 source /usr/share/bash-completion/completions/git
 

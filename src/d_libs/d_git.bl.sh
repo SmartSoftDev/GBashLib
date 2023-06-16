@@ -23,6 +23,7 @@ gblcmd_git_clean_local_only_branches(){
     set -e
     local main_branch="dev"
     [ ! -z "$1" ] && main_branch="$1"
+    echo "Using '$main_branch' branch for comparisons"
     git remote prune origin
     echo "checkout the '$main_branch' branch"
     git checkout $main_branch
