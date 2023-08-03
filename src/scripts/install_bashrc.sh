@@ -15,6 +15,7 @@ mng_bashrc add terminal
 mng_bashrc add jump
 mng_bashrc add ssh
 mng_bashrc add console
+mng_bashrc add common
 
 mng_gitconfig add "alias"
 mng_gitconfig add http_credentials

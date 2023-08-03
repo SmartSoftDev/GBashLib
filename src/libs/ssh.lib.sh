@@ -25,7 +25,7 @@ function ssh_tunnel(){
             echo "DONE!"
         fi
     elif [ "$action" == "list" ] ; then
-      ps fax | grep "ssh -fnNT" | grep -v "grep"
+        ps fax | grep "ssh -fnNT" | grep -v "grep"
     else
         echo "ssh_tunnel start|stop|list HOST LOCAL_PORT REMOTE_PORT REMOTE_HOST(default:127.0.0.1) MODE(-L default otherwise -R)" 
     fi
