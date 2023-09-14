@@ -166,7 +166,7 @@ if [ "$1" == "_print_autocomplete_result" ] ; then
 	exit 0
 fi
 if [ "$1" == "_print_autocomplete" ] ; then
-	gprint_autocomplete_bash_code $@
+	gprint_autocomplete_bash_code "$@"
 	exit 0
 fi
 
@@ -231,7 +231,7 @@ do
 		fi
 	}
 	#echo -e "\tcommand: '$CMD' with args '${CMD_ARGS[@]}'"
-	gblcmd_$CMD ${CMD_ARGS[@]}
+	gblcmd_$CMD "${CMD_ARGS[@]}"
 	CMD_RUN_COUNT=1
 done
 
