@@ -20,4 +20,4 @@ function main(){
       fi
   fi
 }
-main $@
+main "$@"

@@ -21,7 +21,7 @@ function ossl_encrypt_file(){
 	openssl aes-256-cbc -a -salt -in $src -out $dst
 }
 function ossle(){
-	ossl_encrypt_file $@
+	ossl_encrypt_file "$@"
 }
 
 function ossl_decrypt_file(){
