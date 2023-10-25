@@ -141,7 +141,9 @@ _gbl_my_console(){
     dev_path=/dev/$(basename $real_sys_path)
 
     log "Starting  screen console to $dev_path ($baudrate): to exit Ctrl + a then k"
-    sudo screen "$dev_path" "$baudrate"
+    local log_dir=/var/log/serial_console/${alias}/
+    sudo mkdir -p $log_dir
+    sudo screen -L -Logfile $log_dir/`date '+%Y-%m-%d_%Hh_%Mm_%Ss'`.log "$dev_path" "$baudrate"
 
 }
 #gbl_Bash_Auto_Complete

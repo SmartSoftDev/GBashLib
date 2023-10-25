@@ -49,13 +49,21 @@ def _decrypt(value, skip_cannot_decrypt):
     gpg = _init_gpg()
     loc_gpg_user_id_s = gpg.list_keys()
     field_gpg_usr_s_id = [usr_id["id"] for usr_id in value.get("keys", [])]
-    gpg_usr_s_id = [gpg_crt for gpg_crt in loc_gpg_user_id_s if gpg_crt["fingerprint"] in field_gpg_usr_s_id]
+    gpg_usr_s_id = [
+        gpg_crt
+        for gpg_crt in loc_gpg_user_id_s
+        if gpg_crt["fingerprint"] in field_gpg_usr_s_id
+    ]
     if len(gpg_usr_s_id) == 0:
         if skip_cannot_decrypt:
             return ""
         else:
             raise ValueError("No gpg public keys available for decryption!")
-    enc_field_formatted = "-----BEGIN PGP MESSAGE-----\n\n" + value.get("enc_str") + "\n-----END PGP MESSAGE-----\n"
+    enc_field_formatted = (
+        "-----BEGIN PGP MESSAGE-----\n\n"
+        + value.get("enc_str")
+        + "\n-----END PGP MESSAGE-----\n"
+    )
     return str(gpg.decrypt(enc_field_formatted))
 
 
@@ -154,9 +162,13 @@ def print_one(cfg, name, value, type_name=None, last=False):
     else:
         type_name = ""
     if (sys.stdout.isatty() or args.decorate) and not args.bash:
-        s = "{COLOR_CYAN}{name}{COLOR_NONE}".format(COLOR_CYAN=COLOR_CYAN, name=name, COLOR_NONE=COLOR_NONE)
+        s = "{COLOR_CYAN}{name}{COLOR_NONE}".format(
+            COLOR_CYAN=COLOR_CYAN, name=name, COLOR_NONE=COLOR_NONE
+        )
         if args.value_only:
-            s = "{COLOR_GREEN}{value}{COLOR_NONE}".format(COLOR_GREEN=COLOR_GREEN, value=value, COLOR_NONE=COLOR_NONE)
+            s = "{COLOR_GREEN}{value}{COLOR_NONE}".format(
+                COLOR_GREEN=COLOR_GREEN, value=value, COLOR_NONE=COLOR_NONE
+            )
         elif not args.name_only:
             s += " = {COLOR_GREEN}{value}{COLOR_NONE}".format(
                 COLOR_GREEN=COLOR_GREEN, value=value, COLOR_NONE=COLOR_NONE
@@ -183,8 +195,16 @@ def print_one(cfg, name, value, type_name=None, last=False):
 
 def main():
     parser = argparse.ArgumentParser(description="Variable storage for bash")
-    parser.add_argument("-v", "--verbose", action="count", default=0, help="Enable debugging")
-    parser.add_argument("-l", "--local", default=False, action="store_true", help="User ./v.yaml instead of ~/.v.yaml")
+    parser.add_argument(
+        "-v", "--verbose", action="count", default=0, help="Enable debugging"
+    )
+    parser.add_argument(
+        "-l",
+        "--local",
+        default=False,
+        action="store_true",
+        help="User ./v.yaml instead of ~/.v.yaml",
+    )
     parser.add_argument(
         "-e",
         "--env_name",
@@ -207,11 +227,24 @@ def main():
     )
 
     subparsers = parser.add_subparsers(title="Sub commands")
-    sp = subparsers.add_parser("get", help="manipulate ws/pkg evn: create uid with name uid_name")
+    sp = subparsers.add_parser(
+        "get", help="manipulate ws/pkg evn: create uid with name uid_name"
+    )
     sp.set_defaults(cmd="get")
     sp.add_argument("Name", type=str, nargs="+", help="variable Name")
-    sp.add_argument("-t", "--type", default=None, help="Store name=value of a specific type (types does not collide)")
-    sp.add_argument("-s", "--search", default=False, action="store_true", help="Search the text in the name")
+    sp.add_argument(
+        "-t",
+        "--type",
+        default=None,
+        help="Store name=value of a specific type (types does not collide)",
+    )
+    sp.add_argument(
+        "-s",
+        "--search",
+        default=False,
+        action="store_true",
+        help="Search the text in the name",
+    )
     sp.add_argument(
         "-r",
         "--recursive",
@@ -220,11 +253,24 @@ def main():
         help="only if local is set, it will read X directories above this one and merge the values",
     )
 
-    sp = subparsers.add_parser("set", help="manipulate ws/pkg evn: add new entry to uid with name uid_name")
+    sp = subparsers.add_parser(
+        "set", help="manipulate ws/pkg evn: add new entry to uid with name uid_name"
+    )
     sp.set_defaults(cmd="set")
     sp.add_argument("Name", type=str, nargs="+", help="variable Name")
-    sp.add_argument("-t", "--type", default=None, help="Store name=value of a specific type (types does not collide)")
-    sp.add_argument("-a", "--append", action="store_true", default=False, help="Append current value to existing one")
+    sp.add_argument(
+        "-t",
+        "--type",
+        default=None,
+        help="Store name=value of a specific type (types does not collide)",
+    )
+    sp.add_argument(
+        "-a",
+        "--append",
+        action="store_true",
+        default=False,
+        help="Append current value to existing one",
+    )
     sp.add_argument(
         "-s",
         "--separator",
@@ -233,28 +279,70 @@ def main():
     )
 
     sp = subparsers.add_parser(
-        "enc", help="manipulate ws/pkg evn: add new gpg encrypted entry " "to uid with name uid_name "
+        "enc",
+        help="manipulate ws/pkg evn: add new gpg encrypted entry "
+        "to uid with name uid_name ",
     )
     sp.set_defaults(cmd="enc")
     sp.add_argument(
-        "-r", "--random", action="store_true", default=False, help="Generate random string value using uuid4() "
+        "-r",
+        "--random",
+        action="store_true",
+        default=False,
+        help="Generate random string value using uuid4() ",
     )
 
     sp.add_argument("value", type=str, help='variable name=value. Ex:"test_var=1234"')
-    sp.add_argument("recipients", type=str, nargs="+", help="PGP users fingerprints|IDs")
+    sp.add_argument(
+        "recipients", type=str, nargs="+", help="PGP users fingerprints|IDs"
+    )
 
     sp = subparsers.add_parser("list", help="Print all values")
     sp.set_defaults(cmd="list")
-    sp.add_argument("-t", "--type", default=None, help="lists name=value of a specific type")
-    sp.add_argument("-a", "--all", action="store_true", default=False, help="lists name=value for all types")
-    sp.add_argument("-d", "--decorate", action="store_true", default=False, help="always decorate for terminal")
-    sp.add_argument("-n", "--name-only", action="store_true", default=False, help="show only names")
+    sp.add_argument(
+        "-t", "--type", default=None, help="lists name=value of a specific type"
+    )
+    sp.add_argument(
+        "-a",
+        "--all",
+        action="store_true",
+        default=False,
+        help="lists name=value for all types",
+    )
+    sp.add_argument(
+        "-d",
+        "--decorate",
+        action="store_true",
+        default=False,
+        help="always decorate for terminal",
+    )
+    sp.add_argument(
+        "-n", "--name-only", action="store_true", default=False, help="show only names"
+    )
     sp.add_argument("-f", "--find-in-names", help="search in the names")
     sp.add_argument("-F", "--find-in-values", help="search in the values")
-    sp.add_argument("-i", "--insensitive-case", action="store_true", default=False, help="search with case insensitive")
-    sp.add_argument("-v", "--value-only", action="store_true", default=False, help="show only values")
+    sp.add_argument(
+        "-i",
+        "--insensitive-case",
+        action="store_true",
+        default=False,
+        help="search with case insensitive",
+    )
+    sp.add_argument(
+        "-v",
+        "--value-only",
+        action="store_true",
+        default=False,
+        help="show only values",
+    )
     sp.add_argument("-s", "--separator", default="\n", help="set separator string")
-    sp.add_argument("-b", "--bash", action="store_true", default=False, help="prints it for bash interpretation")
+    sp.add_argument(
+        "-b",
+        "--bash",
+        action="store_true",
+        default=False,
+        help="prints it for bash interpretation",
+    )
     sp.add_argument(
         "-r",
         "--recursive",
@@ -263,12 +351,18 @@ def main():
         help="only if local is set, it will read X directories above this one and merge the values",
     )
     sp.add_argument(
-        "-S", "--skip_cannot_decrypt", action="store_true", default=False, help="Skip fields which cannot be decrypted"
+        "-S",
+        "--skip_cannot_decrypt",
+        action="store_true",
+        default=False,
+        help="Skip fields which cannot be decrypted",
     )
 
     sp = subparsers.add_parser("del", help="delete one entry")
     sp.add_argument("Name", type=str, nargs="+", help="variable Name")
-    sp.add_argument("-t", "--type", default=None, help="delete entry from specific type")
+    sp.add_argument(
+        "-t", "--type", default=None, help="delete entry from specific type"
+    )
     sp.set_defaults(cmd="del")
 
     sp = subparsers.add_parser("drop", help="Delete hole DB")
@@ -276,13 +370,21 @@ def main():
 
     sp = subparsers.add_parser("add-user-key", help="Add pgp user key")
     sp.set_defaults(cmd="add-user-key")
-    sp.add_argument("-k", "--key-name", type=str, default=None, help='key Name. Ex:"test_key"')
-    sp.add_argument("recipients", type=str, nargs="+", help="PGP users fingerprints|IDs")
+    sp.add_argument(
+        "-k", "--key-name", type=str, default=None, help='key Name. Ex:"test_key"'
+    )
+    sp.add_argument(
+        "recipients", type=str, nargs="+", help="PGP users fingerprints|IDs"
+    )
 
     sp = subparsers.add_parser("del-user-key", help="Delete pgp user key")
     sp.set_defaults(cmd="del-user-key")
-    sp.add_argument("-k", "--key-name", type=str, default=None, help='variable Name. Ex:"test_key"')
-    sp.add_argument("recipients", type=str, nargs="+", help="PGP users fingerprints|IDs")
+    sp.add_argument(
+        "-k", "--key-name", type=str, default=None, help='variable Name. Ex:"test_key"'
+    )
+    sp.add_argument(
+        "recipients", type=str, nargs="+", help="PGP users fingerprints|IDs"
+    )
 
     args = parser.parse_args()
     if not hasattr(args, "cmd"):
@@ -356,7 +458,10 @@ def main():
             if user_key["fingerprint"] in args.recipients
         ]
         if len(gpg_usr_s_id) < 1:
-            parser.error(message="Didn't find public keys for passed fingerprints %r!" % args.recipients)
+            parser.error(
+                message="Didn't find public keys for passed fingerprints %r!"
+                % args.recipients
+            )
         namespace = args.value.split("=", 1)
         namespace[0] = namespace[0].strip()
         name = namespace[0]
@@ -431,7 +536,7 @@ def main():
                     v = _decrypt(v, args.skip_cannot_decrypt)
                     if len(v) == 0:
                         if not args.skip_cannot_decrypt:
-                            raise ValueError("Could not decrypt k=%r" % k)
+                            raise ValueError(f"Could not decrypt k={k}")
                         else:
                             v = "<CANNOT DECRYPT>"
                 print_one(cfg, k, v)
@@ -445,7 +550,7 @@ def main():
                             value = _decrypt(value, args.skip_cannot_decrypt)
                             if len(value) == 0:
                                 if not args.skip_cannot_decrypt:
-                                    raise ValueError("Could not decrypt name=%r" % name)
+                                    raise ValueError(f"Could not decrypt name={name}")
                                 else:
                                     value = "<CANNOT DECRYPT>"
                         print_one(cfg, name, value, type_name)
@@ -458,7 +563,7 @@ def main():
                     value = _decrypt(value, args.skip_cannot_decrypt)
                     if len(value) == 0:
                         if not args.skip_cannot_decrypt:
-                            raise ValueError("Could not decrypt name=%r" % name)
+                            raise ValueError("Could not decrypt name={name}")
                         else:
                             value = "<CANNOT DECRYPT>"
                 print_one(cfg, name, value, args.type)
@@ -500,19 +605,24 @@ def main():
                     value_keys = value.get("keys")
                     value_keys_fingerprints = [key["id"] for key in value_keys]
                     found_keys = [
-                        user_key for user_key in gpg_key_list if user_key["fingerprint"] in value_keys_fingerprints
+                        user_key
+                        for user_key in gpg_key_list
+                        if user_key["fingerprint"] in value_keys_fingerprints
                     ]
                     if len(value_keys) != len(found_keys):
-                        raise Exception(
-                            "Could not find all (%r of %r) keys to re/encrypt name=%r"
-                            % (len(found_keys), len(value_keys), name)
+                        raise KeyError(
+                            f"Could not find all ({len(found_keys)} of {len(value_keys)}) keys to re/encrypt name={name}"
                         )
                     if args.cmd == "add-user-key":
                         for usr_id in gpg_usr_s_id:
                             if usr_id not in value_keys:
                                 value["keys"].append(usr_id)
                     elif args.cmd == "del-user-key":
-                        value["keys"] = [usr_id for usr_id in value.get("keys", []) if usr_id not in gpg_usr_s_id]
+                        value["keys"] = [
+                            usr_id
+                            for usr_id in value.get("keys", [])
+                            if usr_id not in gpg_usr_s_id
+                        ]
 
                     if len(value["keys"]) < 1:
                         parser.error(message=NO_GPG_KEYS_ERROR_MSG)
@@ -532,7 +642,9 @@ def main():
                 value_keys = value.get("keys")
                 value_keys_fingerprints = [key["id"] for key in value_keys]
                 found_keys = [
-                    user_key for user_key in gpg_key_list if user_key["fingerprint"] in value_keys_fingerprints
+                    user_key
+                    for user_key in gpg_key_list
+                    if user_key["fingerprint"] in value_keys_fingerprints
                 ]
                 if len(value_keys) != len(found_keys):
                     print("gpg_key_list= %r" % gpg_key_list)
@@ -546,13 +658,19 @@ def main():
                         if usr_id not in value.get("keys", []):
                             value["keys"].append(usr_id)
                 elif args.cmd == "del-user-key":
-                    value["keys"] = [usr_id for usr_id in value.get("keys", []) if usr_id not in gpg_usr_s_id]
+                    value["keys"] = [
+                        usr_id
+                        for usr_id in value.get("keys", [])
+                        if usr_id not in gpg_usr_s_id
+                    ]
 
                 if len(value["keys"]) < 1:
                     parser.error(message=NO_GPG_KEYS_ERROR_MSG)
 
                 all_recipients = [recipient["id"] for recipient in value["keys"]]
-                value["enc_str"] = _format_gpg_enc_str(str(gpg.encrypt(str(_decrypt(value, False)), all_recipients)))
+                value["enc_str"] = _format_gpg_enc_str(
+                    str(gpg.encrypt(str(_decrypt(value, False)), all_recipients))
+                )
             else:
                 parser.exit(message="Key value cannot be empty!")
         save_config()
