@@ -14,23 +14,25 @@ def process_line(fi_line):
     cfg.fo.write(fi_line)
 
 
-def read_from_fo_replace(until_l=None, strip_line=False):
+def read_from_fo_replace(until_l: str = None, strip_line: bool = False):
     """reads from fo_repl and writes it to fo until "unitil_l" line is matched (if given)"""
     if not cfg.fo_repl:
         return
     last_line_has_new_line = False
+    ignore_line = False
+    if until_l:
+        until_l = until_l.rstrip()
     while True:
         l = cfg.fo_repl.readline()
         if not l:
             break
         # print "read: "+l
         if until_l:
-            if strip_line:
-                if l.strip() == until_l:
-                    break
-            else:
-                if l == until_l:
-                    break
+            if ignore_line and until_l not in l:
+                continue
+            if until_l in l:
+                ignore_line = not ignore_line
+                continue
         cfg.fo.write(l)
         last_line_has_new_line = l.endswith("\n")
     return last_line_has_new_line
@@ -65,7 +67,7 @@ def main():
     if not cfg.args.output:
         cfg.fo = sys.stdout
     else:
-        if cfg.args.replace or cfg.args.at_position:
+        if cfg.args.replace or cfg.args.at_position or cfg.args.delete:
             cfg.foPath = cfg.args.output + ".temp"
             cfg.fo_replPath = cfg.args.output
             cfg.fo = open(cfg.foPath, "w")
@@ -84,13 +86,21 @@ def main():
     count = 0
     repl_id = ""
     if cfg.args.at_position:
-        # write from fo_repl to fo until wwe find at_position string
+        # write from fo_repl to fo until we find at_position string
         read_from_fo_replace(cfg.args.at_position, strip_line=True)
     while True:
         fi_line = cfg.fi.readline()
         if not fi_line:
             break
-        if cfg.args.replace and count == 0:  # if replace is on then first line is the id to be found in output file
+
+        if cfg.args.delete and count == 0:  # if replace is on then first line is the id to be found in output file
+            repl_id = fi_line
+            if cfg.args.id:
+                repl_id = repl_id.rstrip() + cfg.args.id + "\n"
+            # read from output until we detect line "repl_id" which is the start of portion to be deleted.
+            read_from_fo_replace(repl_id)
+
+        elif cfg.args.replace and count == 0:  # if replace is on then first line is the id to be found in output file
             repl_id = fi_line
             if cfg.args.id:
                 repl_id = repl_id.rstrip() + cfg.args.id + "\n"
@@ -102,8 +112,7 @@ def main():
             else:
                 cfg.fo.write(repl_id)
         else:
-            # print "in:"+l
-            if not cfg.args.delete:
+            if cfg.args.delete is False:
                 process_line(fi_line)
         count += 1
 
@@ -121,7 +130,7 @@ def main():
     cfg.fi.close()
     cfg.fo.close()
 
-    if cfg.args.replace or cfg.args.at_position:
+    if cfg.args.replace or cfg.args.at_position or cfg.args.delete:
         os.rename(cfg.foPath, cfg.fo_replPath)
 
 
@@ -135,7 +144,6 @@ if __name__ == "__main__":
         "-r",
         "--replace",
         action="store_true",
-        default=False,
         help="replace content from file between match-start and match-end ",
     )
     sp.add_argument(
@@ -148,7 +156,6 @@ if __name__ == "__main__":
         "-d",
         "--delete",
         action="store_true",
-        default=False,
         help="delete content from file between match-start and match-end",
     )
 

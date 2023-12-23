@@ -19,7 +19,7 @@ gblcmd_remove(){
     local brc_lib="$1"
 
     echo "remove '$brc_lib' from $dest"
-    tpl -i $G_BASH_LIB/tpls/bashrc.tpl -r -I "$brc_lib" -d -o $dest
+    tpl -i $G_BASH_LIB/tpls/bashrc.tpl -d -o $dest
 }
 
 gblcmd_list(){

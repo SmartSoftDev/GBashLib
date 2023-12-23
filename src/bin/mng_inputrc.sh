@@ -20,7 +20,7 @@ gblcmd_remove(){
     local lib_name="$1"
 
     echo "remove '$lib_name' from $dest"
-    tpl -i $G_BASH_LIB/tpls/bashrc.tpl -r -I "$lib_name" -d -o $dest
+    tpl -i $G_BASH_LIB/tpls/inputrc_include.tpl -d -o $dest
 }
 
 gblcmd_list(){
