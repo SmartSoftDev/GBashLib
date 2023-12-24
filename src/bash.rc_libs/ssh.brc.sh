@@ -3,6 +3,7 @@
 
 . $(gbl ip)
 . $(gbl log)
+. $(gbl animation)
 
 _gbl_my_ssh_usage(){
     echo -e "usage to ssh: $COLOR_GREEN s SSH_ALIAS$COLOR_NONE\n\
@@ -21,20 +22,43 @@ _gbl_my_ssh(){
     "del")
         shift
         v del -t ssh $@
+        tpl -i "$G_BASH_LIB/tpls/ssh_host.tpl" -I "_$1" -d -o "$HOME/.ssh/config"
         return 0
     ;;
     "set")
         # let's parse the options
         local ProxyJump=""
-        while [[ "$2" == --* ]] ; do
+        while [[ "$2" == -* ]] ; do
             case "$2" in
             "--ProxyJump")
                 ProxyJump="ProxyJump=$3"
                 shift
                 shift
                 ;;
+            -j)
+                ProxyJump="ProxyJump$=$3"
+                shift
+                shift
+                ;;
+            --ProxyJump=*)
+                if [ "$2" == "--ProxyJump=" ]; then
+                    err "ProxyJump option expect a value!"
+                    return 1
+                fi
+                ProxyJump="${2/--}"
+                shift
+                ;;
+            -j=*)
+                if [ "$2" == "-j=" ]; then
+                    err "ProxyJump option expect a value!"
+                    return 1
+                fi
+                ProxyJump="ProxyJump${2/-j}"
+                shift
+                ;;
             *)
-                fatal "Unexpected $2 option";
+                err "Unexpected $2 option";
+                return 1
                 ;;
             esac
         done
@@ -57,9 +81,7 @@ _gbl_my_ssh(){
 
 
         tpl -i "$G_BASH_LIB/tpls/ssh_host.tpl" -r -I "_$alias" -o "$HOME/.ssh/config" \
-            -v "ALIAS=$alias" "IP=$ip" "USER=$user" "PORT=$port" "VALUE_PJ=$ProxyJump"
-        #FIXME-SSD: when TPL will support permission mode remove this one
-        chmod go-w $HOME/.ssh/config
+            -v "ALIAS=$alias" "IP=$ip" "USER=$user" "PORT=$port" "VALUE_PJ=$ProxyJump" -p go-w
         local save_ip="$alias=$user@$ip:$port"
         [ "$ProxyJump" != "" ] && save_ip="$save_ip $ProxyJump"
         v set -t ssh "$save_ip"
@@ -76,14 +98,19 @@ _gbl_my_ssh(){
     esac
     # let's parse the options
     local opt_wait=""
-    while [[ "$1" == --* ]] ; do
+    while [[ "$1" == -* ]] ; do
         case "$1" in
         "--wait")
             opt_wait="yes"
             shift
             ;;
+        "-w")
+            opt_wait="yes"
+            shift
+            ;;
         *)
-            fatal "Unexpected $1 option";
+            err "Unexpected $1 option";
+            return 1
             ;;
         esac
     done
@@ -119,19 +146,9 @@ _gbl_my_ssh(){
     done
     echo -e "\t $COLOR_GREEN ssh $ip_txt $COLOR_NONE"
     [ "$opt_wait" == "yes" ] && {
-        printf "\t  wait for SSH ..."
         SECONDS=0
-        local counter=0
-        local progress=( '.      ' '. .    ' '. . .  ' '. . . .')
         while true ; do
-            ssh -o ConnectTimeout=2 -t $1 "true" > /dev/null 2>&1  || {
-                printf "%s" "${progress[$(( counter%4 ))]}"
-                sleep 2
-                printf '\b\b\b\b\b\b\b'
-                (( counter += 1))
-                continue
-            }
-            echo "."
+            ssh -o ConnectTimeout=2 -t $1 "true" > /dev/null 2>&1  || loading_dots 10 "\t  wait for SSH "
             echo -e "$COLOR_GREEN ssh is up! $COLOR_NONE in $SECONDS sec"
             break
         done

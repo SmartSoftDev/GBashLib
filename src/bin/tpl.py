@@ -3,8 +3,15 @@ import argparse
 import os
 import sys
 from types import SimpleNamespace
+import re
+
+octal_regx = r"^(?#Match octal integers)([0-7]{3})|" \
+             r"(?#Match groups)((a|g|o|u|go|gu|og|ou|ug|uo|gou|guo|ogu|oug|ugo|uog)?" \
+             r"(?#Match operator)[\-+]" \
+             r"(?#Match permission)(x|w|r|xw|xr|wx|wr|rx|rw|xwr|xrw|wxr|wrx|rxw|rwx))$"
 
 cfg = SimpleNamespace()
+octal_str_pattern = re.compile(octal_regx)
 
 
 def process_line(fi_line):
@@ -20,21 +27,20 @@ def read_from_fo_replace(until_l: str = None, strip_line: bool = False):
         return
     last_line_has_new_line = False
     ignore_line = False
-    if until_l:
-        until_l = until_l.rstrip()
     while True:
-        l = cfg.fo_repl.readline()
-        if not l:
+        line = cfg.fo_repl.readline()
+        if not line:
             break
         # print "read: "+l
         if until_l:
-            if ignore_line and until_l not in l:
-                continue
-            if until_l in l:
+            l = line.rstrip() if strip_line else line
+            if until_l == l or f"{until_l.rstrip()}_END" in l:
                 ignore_line = not ignore_line
                 continue
-        cfg.fo.write(l)
-        last_line_has_new_line = l.endswith("\n")
+            elif ignore_line and until_l != l:
+                continue
+        cfg.fo.write(line)
+        last_line_has_new_line = line.endswith("\n")
     return last_line_has_new_line
 
 
@@ -127,6 +133,33 @@ def main():
         read_from_fo_replace()
         if cfg.fo_repl:
             cfg.fo_repl.close()
+
+    if cfg.args.permissions:
+        fo = cfg.args.output
+        if hasattr(cfg, 'fopath'):
+           fo = cfg.foPath
+        permissions = cfg.args.permissions
+        if isinstance(permissions, int):
+            new_permissions = permissions
+        else:
+            new_permissions = int(oct(os.stat(fo).st_mode)[-3:], 8)
+            op = "+" if "+" in permissions else "-"
+            groups = permissions[:permissions.find(op)]
+            if len(groups) == 0 or groups == "a":
+                groups = "ugo"
+            rights = permissions[permissions.find(op) + 1:]
+            bits = list(f"{new_permissions:>08b}")
+
+            bit_groups = {"u": 2, "g": 5, "o": 8}
+            bit_value = "0" if op == "-" else "1"
+            for g in groups:
+                start_indx = bit_groups.get(g)
+                for r in rights:
+                    bits[start_indx - "xwr".index(r)] = bit_value
+
+            new_permissions = int("".join(bits), 2)
+        os.chmod(fo, new_permissions)
+
     cfg.fi.close()
     cfg.fo.close()
 
@@ -134,11 +167,21 @@ def main():
         os.rename(cfg.foPath, cfg.fo_replPath)
 
 
+def octal_string(oct_str: str):
+    m = octal_str_pattern.match(oct_str)
+    if not m:
+        raise ValueError  # or TypeError, or `argparse.ArgumentTypeError
+    if m.group(1):
+        return int(oct_str, 8)
+    return m.group(2)
+
+
 if __name__ == "__main__":
     sp = argparse.ArgumentParser(description="Render a template with variables")
 
     sp.add_argument("-o", "--output", default=None, help="Output file. Default is stdout.")
-    sp.add_argument("-p", "--permissions", default=None, help="TODO: Octal output file permissions ex: 0755")
+    sp.add_argument("-p", "--permissions", type=octal_string, default=None,
+                    help="Octal output file permissions ex: 0755 or a+xwr")
     sp.add_argument("-i", "--input", help="Template file. If not present stdin will be used")
     sp.add_argument(
         "-r",
