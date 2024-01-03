@@ -2,23 +2,35 @@
 DIR=$(readlink -f $(dirname "${BASH_SOURCE[0]}")/../)
 set -e
 
-sudo ln -sf "$DIR/bin/v.py" "/bin/v"
-sudo ln -sf "$DIR/bin/tpl.py" "/bin/tpl"
-sudo ln -sf "$DIR/bin/uidgen.py" "/bin/uidgen"
-sudo ln -sf "$DIR/bin/auto_complete.py" "/bin/autoComplete"
-sudo ln -sf "$DIR/bin/to_json_yaml.py" "/bin/to_json_yaml"
+declare -A BINS=(
+    ["v.py"]="v"
+    ["tpl.py"]="tpl"
+    ["uidgen.py"]="uidgen"
+    ["auto_complete.py"]="autoComplete"
+    ["to_json_yaml.py"]="to_json_yaml"
+)
 
+declare -A GBL_BINS=(
+    ["d.sh"]="d"
+    ["r.sh"]="r"
+    ["gbl.sh"]="gbl"
+    ["bin/mng_bashrc.sh"]="mng_bashrc"
+    ["bin/mng_gitconfig.sh"]="mng_gitconfig"
+    ["bin/mng_inputrc.sh"]="mng_inputrc"
+)
 
-# binaries with GBL path
-sudo rm -f "/bin/d" "/bin/r" "/bin/gbl" "/bin/mng_bashrc" "/bin/mng_gitconfig" "/bin/mng_inputrc"
-sudo tpl -i "$DIR/d.sh" -o "/bin/d" -v GBL_PATH=$DIR
-sudo tpl -i "$DIR/r.sh" -o "/bin/r" -v GBL_PATH=$DIR
-sudo tpl -i "$DIR/gbl.sh" -o "/bin/gbl" -v GBL_PATH=$DIR
-sudo tpl -i "$DIR/bin/mng_bashrc.sh" -o "/bin/mng_bashrc" -v GBL_PATH=$DIR
-sudo tpl -i "$DIR/bin/mng_gitconfig.sh" -o "/bin/mng_gitconfig" -v GBL_PATH=$DIR
-sudo tpl -i "$DIR/bin/mng_inputrc.sh" -o "/bin/mng_inputrc" -v GBL_PATH=$DIR
-sudo chmod +x "/bin/d" "/bin/r" "/bin/gbl" "/bin/mng_bashrc" "/bin/mng_gitconfig" "/bin/mng_inputrc"
+for binary in "${!BINS[@]}"; do
+    bin_path="/bin/${BINS[$binary]}"
+    if [ ! -f "$bin_path" ]; then
+        sudo ln -sf "$DIR/bin/${binary}" "$bin_path"
+    fi
+done
 
-# bashrc for USER and root
-tpl -i "$DIR/tpls/bashrc.tpl" -r -o "$HOME/.bashrc" -v "BASHRC_INC=$DIR/gbl_bashrc.inc.sh"
-sudo tpl -i "$DIR/tpls/bashrc.tpl" -r -o /root/.bashrc -v "BASHRC_INC=$DIR/gbl_bashrc.inc.sh"
+for binary in "${!GBL_BINS[@]}"; do
+    bin_path="/bin/${GBL_BINS[$binary]}"
+    if [ -f "$bin_path" ]; then
+        sudo rm "$bin_path"
+    fi
+    sudo tpl -i "$DIR/${binary}" -o "${bin_path}" -v "GBL_PATH=$DIR" -p +x
+done
+
