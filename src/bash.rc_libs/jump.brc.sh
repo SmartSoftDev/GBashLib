@@ -24,7 +24,7 @@ _gbl_my_jump(){
     ;;
     esac
 
-    [[  -z "$1" ]] && {
+    [[ -z "$1" ]] && {
         echo -e "usage to jump: $COLOR_GREEN j J_ALIAS$COLOR_NONE\n\
 usage to set: $COLOR_GREEN j set J_ALIAS PATH$COLOR_NONE\n\
 usage to del: $COLOR_GREEN j del J_ALIAS $COLOR_NONE\n\
@@ -32,29 +32,39 @@ usage to list: $COLOR_GREEN j$COLOR_NONE or $COLOR_GREEN j list$COLOR_NONE "
         v list -dt path
         return 0
     }
-    local location
-    location=$( v get -t path "$1" )
-    [[ "$location" == "" ]] && {
-        location=($(v list -t path -n  | grep "$1"))
+    local location location_suffix location_prefix
+    location_prefix="${1%%\/*}"
+    location=$( v get -t path "$location_prefix" )
+    if [[ "$1" == *"/"* ]] && [ -d "$location/${1#*/}" ]; then
+        location_suffix="/${1#*/}"
+    fi
+    if [[ "$location" == "" ]]; then
+        location=($(v list -t path -n  | grep "$location_prefix"))
         if [[ ${#location[@]} == 0 ]] ; then
-            echo -e "location is $COLOR_RED NOT-SET $COLOR_NONE use '$COLOR_GREEN j set $1 PATH$COLOR_NONE'"
+            echo -e "location is $COLOR_RED NOT-SET $COLOR_NONE use '$COLOR_GREEN j set $location_prefix PATH$COLOR_NONE'"
             return 1
-    elif [ ${#location[@]} -gt 1 ] ; then
-            echo -e "location $1 is ambigues: (${location[@]})"
-            return 1
+        elif [ ${#location[@]} -gt 1 ] ; then
+                echo -e "location $1 is ambiguous: (${location[@]})"
+                return 1
         else
             echo "$1 -> $location"
-            location=$(v get -t path $location )
+            location="$(v get -t path $location )"
         fi
-    }
+    fi
     echo -e "\tjump to $COLOR_GREEN $location $COLOR_NONE"
-    cd "$location"
+    cd "$location$location_suffix"
 }
 
 _gbl_bac_jump_alias(){
-    local cur=${COMP_WORDS[COMP_CWORD]}
-    local prev=${COMP_WORDS[COMP_CWORD-1]}
-    conns="$(v list -nt path | grep "$cur")"
+    local cur_prefix cur_suffix  cur prev conns
+    cur=${COMP_WORDS[COMP_CWORD]}
+    prev=${COMP_WORDS[COMP_CWORD-1]}
+    cur_prefix="${cur%%\/*}"
+    conns="$(v list -nt path | grep "$cur_prefix")"
+    if (( ${#cur_prefix} > 1 )) && [[ "$cur" == *"/"* ]] ;then
+        conns="$(v list -nt path | grep "$cur_prefix$")"
+        cur_suffix="${cur#*/}/"
+    fi
     if [ "$COMP_CWORD" -gt 1 ] ; then
         case "$prev" in
             "get"|"set")
@@ -64,14 +74,67 @@ _gbl_bac_jump_alias(){
             ;;
         esac
     else
-        conns="$conns $(echo -e "get\nset\nlist" | grep "$cur") "
+        conns="$conns $(echo -e "get\nset\nlist" | grep "$cur_prefix") "
     fi
 
+    if [ -z "$cur_suffix" ]; then
+        COMPREPLY=( $(compgen -W "$conns") )
+    else
+        local location
+        location=($(v list -t path -n  | grep "^$cur_prefix$"))
+        if [[ ${#location[@]} == 0 ]] ; then
+            echo -e "location is $COLOR_RED NOT-SET $COLOR_NONE use '$COLOR_GREEN j set $1 PATH$COLOR_NONE'"
+            return 1
+        elif [ ${#location[@]} -gt 1 ] ; then
+            echo -e "location $1 is ambiguous: (${location[@]})"
+            return 1
+        else
+            location=$(v get -t path $location )
+            # trim trailing '/'
+            cur_suffix="${cur_suffix%%+(/)}"
+            # check if location is valid directory path
+            if [ -d "$location/$cur_suffix" ];then
+                location="$location/$cur_suffix"
+            else
+                location="$location/$cur_suffix"
+                # trim last autocomplete part
+                location="${location%/*}"
+            fi
 
-    COMPREPLY=( $(compgen -W "$conns") )
+            pushd "$location" 2>&1 >/dev/null
+            COMPREPLY=()
+            # check if user typed a valid directory name
+            while IFS=  read -r -d $'\0'; do
+                elem="${REPLY}"
+                if [[  "$elem" == *"$cur_suffix"* ]];then
+                    COMPREPLY+=( "$cur_prefix/${elem##*/}/" )
+                fi
+            done < <(find . -mindepth 1 -maxdepth 1 -type d -print0)
+            # if user chose a directory(full match) that have subdirectories then suggest them
+            if [ "${#COMPREPLY[@]}" -eq 1 ];then
+                _COMPREPLY=()
+                while IFS=  read -r -d $'\0'; do
+                    _COMPREPLY+=( "${COMPREPLY[0]}${REPLY##*/}/" )
+                done < <(find "../${COMPREPLY[0]}" -mindepth 1 -maxdepth 1 -type d -print0)
+
+                if [ "${#_COMPREPLY[@]}" -gt 0 ]; then
+                    COMPREPLY=( ${_COMPREPLY[*]} )
+                fi
+            elif [ "${#COMPREPLY[@]}" -eq 0 ];then
+                # filter suggestions
+                while IFS=  read -r -d $'\0'; do
+                    elem="${REPLY##*/}"
+                    if [[ "$location/$elem" == "${location%/*}/$cur_suffix"* ]];then
+                        COMPREPLY+=( "$cur_prefix/${cur_suffix%/*}/$elem/" )
+                    fi
+                done < <(find . -mindepth 1 -maxdepth 1 -type d -print0)
+            fi
+            popd 2>&1 >/dev/null
+        fi
+    fi
 } ;
 if type complete >/dev/null 2>&1 ; then
-    complete -r j _gbl_bac_jump_alias >/dev/null 2>&1; #firts remove old j autocomplete
+    complete -r j _gbl_bac_jump_alias >/dev/null 2>&1; #first remove old j autocomplete
     complete -F _gbl_bac_jump_alias j
 fi
 
