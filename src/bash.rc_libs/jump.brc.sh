@@ -32,11 +32,12 @@ usage to list: $COLOR_GREEN j$COLOR_NONE or $COLOR_GREEN j list$COLOR_NONE "
         v list -dt path
         return 0
     }
-    local location location_suffix location_prefix
-    location_prefix="${1%%\/*}"
+    local location location_suffix location_prefix args
+    arg="$@" # handle directories that have spaces in name
+    location_prefix="${args%%\/*}"
     location=$( v get -t path "$location_prefix" )
-    if [[ "$1" == *"/"* ]] && [ -d "$location/${1#*/}" ]; then
-        location_suffix="/${1#*/}"
+    if [[ "$1" == *"/"* ]] && [ -d "$location/${args#*/}" ]; then
+        location_suffix="/${args#*/}"
     fi
     if [[ "$location" == "" ]]; then
         location=($(v list -t path -n  | grep "$location_prefix"))
