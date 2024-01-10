@@ -33,7 +33,7 @@ usage to list: $COLOR_GREEN j$COLOR_NONE or $COLOR_GREEN j list$COLOR_NONE "
         return 0
     }
     local location location_suffix location_prefix args
-    arg="$@" # handle directories that have spaces in name
+    args="$@" # handle directories that have spaces in name
     location_prefix="${args%%\/*}"
     location=$( v get -t path "$location_prefix" )
     if [[ "$1" == *"/"* ]] && [ -d "$location/${args#*/}" ]; then
@@ -57,7 +57,7 @@ usage to list: $COLOR_GREEN j$COLOR_NONE or $COLOR_GREEN j list$COLOR_NONE "
 }
 
 _gbl_bac_jump_alias(){
-    local cur_prefix cur_suffix  cur prev conns
+    local cur_prefix cur_suffix cur prev conns root_dir
     cur=${COMP_WORDS[COMP_CWORD]}
     prev=${COMP_WORDS[COMP_CWORD-1]}
     cur_prefix="${cur%%\/*}"
@@ -77,7 +77,6 @@ _gbl_bac_jump_alias(){
     else
         conns="$conns $(echo -e "get\nset\nlist" | grep "$cur_prefix") "
     fi
-
     if [ -z "$cur_suffix" ]; then
         COMPREPLY=( $(compgen -W "$conns") )
     else
@@ -101,42 +100,18 @@ _gbl_bac_jump_alias(){
                 # trim last autocomplete part
                 location="${location%/*}"
             fi
-
-            pushd "$location" 2>&1 >/dev/null
-            COMPREPLY=()
-            # check if user typed a valid directory name
             while IFS=  read -r -d $'\0'; do
-                elem="${REPLY}"
-                if [[  "$elem" == *"$cur_suffix"* ]];then
-                    COMPREPLY+=( "$cur_prefix/${elem##*/}/" )
+                elem="${REPLY#*$cur_prefix\/}"
+                if [[  "$elem" == "$cur_suffix"* ]];then
+                    COMPREPLY+=( "$cur_prefix/$elem/" )
                 fi
-            done < <(find . -mindepth 1 -maxdepth 1 -type d -print0)
-            # if user chose a directory(full match) that have subdirectories then suggest them
-            if [ "${#COMPREPLY[@]}" -eq 1 ];then
-                _COMPREPLY=()
-                while IFS=  read -r -d $'\0'; do
-                    _COMPREPLY+=( "${COMPREPLY[0]}${REPLY##*/}/" )
-                done < <(find "../${COMPREPLY[0]}" -mindepth 1 -maxdepth 1 -type d -print0)
-
-                if [ "${#_COMPREPLY[@]}" -gt 0 ]; then
-                    COMPREPLY=( ${_COMPREPLY[*]} )
-                fi
-            elif [ "${#COMPREPLY[@]}" -eq 0 ];then
-                # filter suggestions
-                while IFS=  read -r -d $'\0'; do
-                    elem="${REPLY##*/}"
-                    if [[ "$location/$elem" == "${location%/*}/$cur_suffix"* ]];then
-                        COMPREPLY+=( "$cur_prefix/${cur_suffix%/*}/$elem/" )
-                    fi
-                done < <(find . -mindepth 1 -maxdepth 1 -type d -print0)
-            fi
-            popd 2>&1 >/dev/null
+            done < <(find $location -mindepth 1 -maxdepth 1 -type d -print0)
         fi
     fi
 } ;
 if type complete >/dev/null 2>&1 ; then
     complete -r j _gbl_bac_jump_alias >/dev/null 2>&1; #first remove old j autocomplete
-    complete -F _gbl_bac_jump_alias j
+    complete -o nospace -F _gbl_bac_jump_alias j
 fi
 
 alias j="_gbl_my_jump"
