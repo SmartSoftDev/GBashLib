@@ -13,5 +13,8 @@ function loading_dots() {
         (( counter += 1))
         elapsed=$(( elapsed + 1 ))
     done
-    printf "\n"
+    (( counter += ${#loading_message} ))
+    for ((i=1;i<=counter;i++));do
+       printf "\b"
+    done
 }

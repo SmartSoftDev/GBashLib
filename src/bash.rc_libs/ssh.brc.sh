@@ -145,12 +145,18 @@ _gbl_my_ssh(){
         ip_txt="-o$ssh_option $ip_txt"
     done
     echo -e "\t $COLOR_GREEN ssh $ip_txt $COLOR_NONE"
+    local ssh_conn
     [ "$opt_wait" == "yes" ] && {
         SECONDS=0
         while true ; do
-            ssh -o ConnectTimeout=2 -t $1 "true" > /dev/null 2>&1  || loading_dots 10 "\t  wait for SSH "
-            echo -e "$COLOR_GREEN ssh is up! $COLOR_NONE in $SECONDS sec"
-            break
+            # try to open ssh connection for 2 seconds then close it
+            ssh_conn="$(ssh -o ConnectTimeout=2 $1 echo ok 2>&1)"
+            if [ "$ssh_conn" == "ok" ]; then
+                echo -e "$COLOR_GREEN ssh is up! $COLOR_NONE in $SECONDS sec"
+                break
+            else
+                loading_dots 10 "\t  wait for SSH "
+            fi
         done
     }
 
