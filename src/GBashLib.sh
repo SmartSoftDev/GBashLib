@@ -170,7 +170,6 @@ if [ "$1" == "_print_autocomplete" ] ; then
 	exit 0
 fi
 
-
 #G arguments parsing
 MAX_INDEX=0
 while getopts $G_ARGS flag >/dev/null 2>&1

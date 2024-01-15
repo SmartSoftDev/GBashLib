@@ -143,6 +143,7 @@ _gbl_my_console(){
     log "Starting  screen console to $dev_path ($baudrate): to exit Ctrl + a then k"
     local log_dir=/var/log/serial_console/${alias}/
     sudo mkdir -p $log_dir
+    local running_screens="$(sudo ps -fa | grep -i screen | grep -i "$dev_path")"
     sudo screen -L -Logfile $log_dir/`date '+%Y-%m-%d_%Hh_%Mm_%Ss'`.log "$dev_path" "$baudrate"
 
 }

@@ -1,7 +1,6 @@
-
 function ff_find(){
     #find file
-	find . -path "*$@*"
+	find . -type f -path "*$@*"
 }
 
 function fd_find(){
