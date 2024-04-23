@@ -31,6 +31,6 @@ for binary in "${!GBL_BINS[@]}"; do
     if [ -f "$bin_path" ]; then
         sudo rm "$bin_path"
     fi
-    sudo tpl -i "$DIR/${binary}" -o "${bin_path}" -v "GBL_PATH=$DIR" -p urwxgrxorx
+    sudo tpl -i "$DIR/${binary}" -o "${bin_path}" -v "GBL_PATH=$DIR" -p urwx,grx,orx
 done
 

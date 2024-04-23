@@ -173,7 +173,7 @@ def permissions_string(in_str: str):
     """
     perm ={"user":"", "group":"", "other":""}
     current_perm = ""
-    accepted_perm_groups = "uga"
+    accepted_perm_groups = "ugo"
     accepted_perm_values = "rwx"
     separator = ","
 
