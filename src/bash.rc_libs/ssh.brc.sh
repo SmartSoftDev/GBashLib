@@ -22,7 +22,7 @@ _gbl_my_ssh(){
     "del")
         shift
         v del -t ssh $@
-        tpl -i "$G_BASH_LIB/tpls/ssh_host.tpl" -I "_$1" -d -o "$HOME/.ssh/config"
+        tpl -i "$G_BASH_LIB/tpls/ssh_host.tpl" -I "_$1" -d -p urw -o "$HOME/.ssh/config"
         return 0
     ;;
     "set")
@@ -81,7 +81,7 @@ _gbl_my_ssh(){
 
 
         tpl -i "$G_BASH_LIB/tpls/ssh_host.tpl" -r -I "_$alias" -o "$HOME/.ssh/config" \
-            -v "ALIAS=$alias" "IP=$ip" "USER=$user" "PORT=$port" "VALUE_PJ=$ProxyJump" -p go-w
+            -v "ALIAS=$alias" "IP=$ip" "USER=$user" "PORT=$port" "VALUE_PJ=$ProxyJump" -p urw
         local save_ip="$alias=$user@$ip:$port"
         [ "$ProxyJump" != "" ] && save_ip="$save_ip $ProxyJump"
         v set -t ssh "$save_ip"

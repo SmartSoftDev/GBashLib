@@ -2,17 +2,10 @@
 import argparse
 import os
 import sys
+import stat
 from types import SimpleNamespace
-import re
-
-octal_regx = r"^(?#Match octal integers)([0-7]{3})|" \
-             r"(?#Match groups)((a|g|o|u|go|gu|og|ou|ug|uo|gou|guo|ogu|oug|ugo|uog)?" \
-             r"(?#Match operator)[\-+]" \
-             r"(?#Match permission)(x|w|r|xw|xr|wx|wr|rx|rw|xwr|xrw|wxr|wrx|rxw|rwx))$"
 
 cfg = SimpleNamespace()
-octal_str_pattern = re.compile(octal_regx)
-
 
 def process_line(fi_line):
     for n, v in cfg.vars.items():
@@ -134,54 +127,82 @@ def main():
         if cfg.fo_repl:
             cfg.fo_repl.close()
 
-    if cfg.args.permissions:
-        fo = cfg.args.output
-        if hasattr(cfg, 'fopath'):
-           fo = cfg.foPath
-        permissions = cfg.args.permissions
-        if isinstance(permissions, int):
-            new_permissions = permissions
-        else:
-            new_permissions = int(oct(os.stat(fo).st_mode)[-3:], 8)
-            op = "+" if "+" in permissions else "-"
-            groups = permissions[:permissions.find(op)]
-            if len(groups) == 0 or groups == "a":
-                groups = "ugo"
-            rights = permissions[permissions.find(op) + 1:]
-            bits = list(f"{new_permissions:>08b}")
-
-            bit_groups = {"u": 2, "g": 5, "o": 8}
-            bit_value = "0" if op == "-" else "1"
-            for g in groups:
-                start_indx = bit_groups.get(g)
-                for r in rights:
-                    bits[start_indx - "xwr".index(r)] = bit_value
-
-            new_permissions = int("".join(bits), 2)
-        os.chmod(fo, new_permissions)
-
     cfg.fi.close()
     cfg.fo.close()
-
     if cfg.args.replace or cfg.args.at_position or cfg.args.delete:
         os.rename(cfg.foPath, cfg.fo_replPath)
 
+    if cfg.args.permissions:
+        fo = cfg.args.output
+        if hasattr(cfg, 'fopath'):
+            fo = cfg.foPath
+        perm = cfg.args.permissions
+        new_permissions = 0
+        for c in perm['user']:
+            if c == 'r':
+                new_permissions |= stat.S_IRUSR
+            elif c == "w":
+                new_permissions |= stat.S_IWUSR
+            elif c == "x":
+                new_permissions |= stat.S_IXUSR
+        for c in perm['group']:
+            if c == 'r':
+                new_permissions |= stat.S_IRGRP
+            elif c == "w":
+                new_permissions |= stat.S_IWGRP
+            elif c == "x":
+                new_permissions |= stat.S_IXGRP
+        for c in perm['other']:
+            if c == 'r':
+                new_permissions |= stat.S_IROTH
+            elif c == "w":
+                new_permissions |= stat.S_IWOTH
+            elif c == "x":
+                new_permissions |= stat.S_IXOTH
+        
 
-def octal_string(oct_str: str):
-    m = octal_str_pattern.match(oct_str)
-    if not m:
-        raise ValueError  # or TypeError, or `argparse.ArgumentTypeError
-    if m.group(1):
-        return int(oct_str, 8)
-    return m.group(2)
+        os.chmod(fo, new_permissions)
+
+
+
+
+
+def permissions_string(in_str: str):
+    """
+    parse permissions string: urwx,grwx,orwx
+    """
+    perm ={"user":"", "group":"", "other":""}
+    current_perm = ""
+    accepted_perm_groups = "uga"
+    accepted_perm_values = "rwx"
+    separator = ","
+
+    for c in in_str:
+        if not current_perm:
+            if c not in accepted_perm_groups:
+                raise Exception(f"Permission group is not accepted: {in_str=} unexpected group={c} FYI: {accepted_perm_groups=}")
+            current_perm = c
+            continue
+        if c == separator:
+            current_perm = None
+            continue
+        if c not in accepted_perm_values:
+            raise Exception(f"Permission value is not accepted: {in_str=} unexpected value={c} FYI: {accepted_perm_values=}")
+        key = "user" if current_perm == "u" else "group" if current_perm == "g" else "other"
+        if c in perm[key]:
+            raise Exception(f"{key!s} permission has duplicate {c!s}. {in_str=}")
+        perm[key]+= c
+        
+    return perm
+
 
 
 if __name__ == "__main__":
     sp = argparse.ArgumentParser(description="Render a template with variables")
 
     sp.add_argument("-o", "--output", default=None, help="Output file. Default is stdout.")
-    sp.add_argument("-p", "--permissions", type=octal_string, default=None,
-                    help="Octal output file permissions ex: 0755 or a+xwr")
+    sp.add_argument("-p", "--permissions", type=permissions_string, default=None,
+                    help="Octal output file permissions ex full permissions: uwrx,grwx,orwx")
     sp.add_argument("-i", "--input", help="Template file. If not present stdin will be used")
     sp.add_argument(
         "-r",
