@@ -19,7 +19,7 @@ FYI: to exit Ctrl + a then k"
     i=0
     for c in  $(_list_sorted_console) ; do
         local usb_path=$(dirname $(dirname $(dirname $c)))
-        echo "$i -> $(basename $c) : $usb_path $(v list -t console -n -F $usb_path)"
+        echo "$i -> $(basename $c) : $(v list -t console -n -F $usb_path)    $usb_path"
         i=$((i+1))
     done
 }
