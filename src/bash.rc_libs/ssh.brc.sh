@@ -28,6 +28,7 @@ _gbl_my_ssh(){
     "set")
         # let's parse the options
         local ProxyJump=""
+        local template_file="$G_BASH_LIB/tpls/ssh_host.tpl"
         while [[ "$2" == -* ]] ; do
             case "$2" in
             "--ProxyJump")
@@ -35,25 +36,9 @@ _gbl_my_ssh(){
                 shift
                 shift
                 ;;
-            -j)
-                ProxyJump="ProxyJump$=$3"
+            --template)
+                template_file="$3"
                 shift
-                shift
-                ;;
-            --ProxyJump=*)
-                if [ "$2" == "--ProxyJump=" ]; then
-                    err "ProxyJump option expect a value!"
-                    return 1
-                fi
-                ProxyJump="${2/--}"
-                shift
-                ;;
-            -j=*)
-                if [ "$2" == "-j=" ]; then
-                    err "ProxyJump option expect a value!"
-                    return 1
-                fi
-                ProxyJump="ProxyJump${2/-j}"
                 shift
                 ;;
             *)
@@ -62,6 +47,22 @@ _gbl_my_ssh(){
                 ;;
             esac
         done
+        # let's preprocess the template file value
+        # if template file is absolute path then use it, else is a file name in GBL tpls directory
+        case $template_file in 
+            /*) 
+                true
+                ;; 
+            *)
+                template_file=$G_BASH_LIB/tpls/$template_file
+                ;; 
+        esac
+        
+        [ ! -f $template_file ] && {
+            err "Template file $template_file NOT FOUND"
+            return 1
+        }
+
         local alias=$2
         local ip=$3
         if [ -z "$alias" ] || [ -z "$ip" ] ; then
@@ -80,8 +81,8 @@ _gbl_my_ssh(){
         [ "$_IP_USER" != "" ] && user=$_IP_USER
 
 
-        tpl -i "$G_BASH_LIB/tpls/ssh_host.tpl" -r -I "_$alias" -o "$HOME/.ssh/config" \
-            -v "ALIAS=$alias" "IP=$ip" "USER=$user" "PORT=$port" "VALUE_PJ=$ProxyJump" -p urw
+        tpl -i $template_file -r -I "_$alias" -o "$HOME/.ssh/config" -p urw \
+            -v "ALIAS=$alias" "IP=$ip" "USER=$user" "PORT=$port" "VALUE_PROXY_JUMP=$ProxyJump"
         local save_ip="$alias=$user@$ip:$port"
         [ "$ProxyJump" != "" ] && save_ip="$save_ip $ProxyJump"
         v set -t ssh "$save_ip"
@@ -166,34 +167,26 @@ _gbl_my_ssh(){
 _gbl_bac_ssh_alias(){
     local cur=${COMP_WORDS[COMP_CWORD]}
     local prev=${COMP_WORDS[COMP_CWORD-1]}
-    if [ "$COMP_CWORD" -gt 1 ] ; then
-        case "$prev" in
-            "set")
-                conns="$(echo -e "--ProxyJump\n" | grep "$cur") "
-            ;;
-            "del"|"list")
-            ;;
-            *)
-                conns="$(v list -nt ssh -i -f "$cur")"
-            ;;
-        esac
-    else
-        if [ "${cur:0:1}" == "-" ] ; then
-            conns="--wait"
-        elif [ "${cur:0:2}" == "--" ] ; then
-            for i in $(echo -e "wait\n" | grep "${cur:2}") ; do
-                conns="$conns --$i"
-            done
-        else
+    local first=${COMP_WORDS[1]}
+    case "$first" in
+        "set")
+            # grep -e "--" works for speacial characters
+            conns="$(echo -e "--template\n--ProxyJump\n" | grep -i -e "$cur")"
+        ;;
+        "del"|"list")
+        ;;
+        *)
             conns="$(v list -nt ssh -i -f "$cur")"
-            conns="$conns $(echo -e "set\ndel\nlist\n--wait\n" | grep "$cur")"
-        fi
-    fi
+            conns="$conns $(echo -e "set\ndel\nlist\n--wait\n" | grep -i -e "$cur")"
+        ;;
+    esac
 
     COMPREPLY=( $(compgen -W "$conns") )
 } ;
-if type complete >/dev/null 2>&1 ; then
-    complete -r s _gbl_bac_ssh_alias >/dev/null 2>&1; #firts remove old s autocomplete
+
+if type complete > /dev/null 2>&1 ; then
+    complete -r s _gbl_bac_ssh_alias > /dev/null 2>&1; #firts remove old s autocomplete
     complete -F _gbl_bac_ssh_alias s
 fi
+
 alias s="_gbl_my_ssh"
