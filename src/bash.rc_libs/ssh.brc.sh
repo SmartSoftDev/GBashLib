@@ -85,6 +85,8 @@ _gbl_my_ssh(){
             -v "ALIAS=$alias" "IP=$ip" "USER=$user" "PORT=$port" "VALUE_PROXY_JUMP=$ProxyJump"
         local save_ip="$alias=$user@$ip:$port"
         [ "$ProxyJump" != "" ] && save_ip="$save_ip $ProxyJump"
+        [ "$template_file" != "$G_BASH_LIB/tpls/ssh_host.tpl" ] && save_ip="$save_ip ${template_file#$G_BASH_LIB/tpls/}"
+        
         v set -t ssh "$save_ip"
 
         ssh-copy-id $alias || {
@@ -143,7 +145,9 @@ _gbl_my_ssh(){
     [ "$_IP_PORT" != "22" ] && ip_txt="-p $_IP_PORT $ip_txt"
     unset ip[0]
     for ssh_option in ${ip[@]} ; do
-        ip_txt="-o$ssh_option $ip_txt"
+        if ! echo "$ssh_option" | grep -q ".tpl"; then
+            ip_txt="-o$ssh_option $ip_txt"
+        fi
     done
     echo -e "\t $COLOR_GREEN ssh $ip_txt $COLOR_NONE"
     local ssh_conn

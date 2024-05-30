@@ -6,7 +6,9 @@ function ssh_tunnel(){
     local remote_host="${5:-127.0.0.1}"
     local mode="-L"
     local tun_name=""
-    if [ -n "$6" ]; then mode="-R" ; fi
+    if [ -n "$6" ]; then 
+        mode="-R" ; 
+    fi
     if [ "$action" == "start" ] ; then
         local cmd="ssh -fnNT ${mode} ${local_port}:${remote_host}:${remote_port} ${host}"
         [ "$mode" == "-R" ] && local_port=$remote_port
