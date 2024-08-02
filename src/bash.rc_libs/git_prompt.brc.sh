@@ -20,8 +20,8 @@ function prompt_eval(){
         # don't add a new line to bash prompt if there is enough space left
         # for commands and the prompt is short
         if [[ ${new_line_config} == "conditional" &&
-              ${available_chars} -ge ${PROMPT_MIN_CHARS} &&
-              ${prompt_len} -lt ${PROMPT_MAX_LEN} ]]
+                ${available_chars} -ge ${PROMPT_MIN_CHARS} &&
+                ${prompt_len} -lt ${PROMPT_MAX_LEN} ]]
         then
             add_new_line=false
         fi
@@ -33,7 +33,7 @@ function prompt_eval(){
 
     fi
     PS1="${prompt}"
-    echo -ne "\033]0;${HOSTNAME}:$(__git_ps1 " (%s)") ${PWD}\007"
+    # FIXME why we need to echo it again: echo -ne "\033]0;${HOSTNAME}:$(__git_ps1 " (%s)") ${PWD}\007"
 }
 
 function read_config(){

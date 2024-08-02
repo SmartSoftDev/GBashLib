@@ -5,7 +5,10 @@ function ssh_tunnel(){
     local remote_port="$4"
     local remote_host="${5:-127.0.0.1}"
     local mode="-L"
-    if [ -n "$6" ]; then mode="-R" ; fi
+    local tun_name=""
+    if [ -n "$6" ]; then 
+        mode="-R" ; 
+    fi
     if [ "$action" == "start" ] ; then
         local cmd="ssh -fnNT ${mode} ${local_port}:${remote_host}:${remote_port} ${host}"
         [ "$mode" == "-R" ] && local_port=$remote_port
@@ -25,7 +28,7 @@ function ssh_tunnel(){
             echo "DONE!"
         fi
     elif [ "$action" == "list" ] ; then
-      ps fax | grep "ssh -fnNT" | grep -v "grep"
+        ps fax | grep "ssh -fnNT" | grep -v "grep"
     else
         echo "ssh_tunnel start|stop|list HOST LOCAL_PORT REMOTE_PORT REMOTE_HOST(default:127.0.0.1) MODE(-L default otherwise -R)" 
     fi

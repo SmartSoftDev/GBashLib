@@ -2,10 +2,10 @@
 import argparse
 import os
 import sys
+import stat
 from types import SimpleNamespace
 
 cfg = SimpleNamespace()
-
 
 def process_line(fi_line):
     for n, v in cfg.vars.items():
@@ -14,25 +14,26 @@ def process_line(fi_line):
     cfg.fo.write(fi_line)
 
 
-def read_from_fo_replace(until_l=None, strip_line=False):
+def read_from_fo_replace(until_l: str = None, strip_line: bool = False):
     """reads from fo_repl and writes it to fo until "unitil_l" line is matched (if given)"""
     if not cfg.fo_repl:
         return
     last_line_has_new_line = False
+    ignore_line = False
     while True:
-        l = cfg.fo_repl.readline()
-        if not l:
+        line = cfg.fo_repl.readline()
+        if not line:
             break
         # print "read: "+l
         if until_l:
-            if strip_line:
-                if l.strip() == until_l:
-                    break
-            else:
-                if l == until_l:
-                    break
-        cfg.fo.write(l)
-        last_line_has_new_line = l.endswith("\n")
+            l = line.rstrip() if strip_line else line
+            if until_l == l or f"{until_l.rstrip()}_END" in l:
+                ignore_line = not ignore_line
+                continue
+            elif ignore_line and until_l != l:
+                continue
+        cfg.fo.write(line)
+        last_line_has_new_line = line.endswith("\n")
     return last_line_has_new_line
 
 
@@ -65,7 +66,7 @@ def main():
     if not cfg.args.output:
         cfg.fo = sys.stdout
     else:
-        if cfg.args.replace or cfg.args.at_position:
+        if cfg.args.replace or cfg.args.at_position or cfg.args.delete:
             cfg.foPath = cfg.args.output + ".temp"
             cfg.fo_replPath = cfg.args.output
             cfg.fo = open(cfg.foPath, "w")
@@ -84,13 +85,21 @@ def main():
     count = 0
     repl_id = ""
     if cfg.args.at_position:
-        # write from fo_repl to fo until wwe find at_position string
+        # write from fo_repl to fo until we find at_position string
         read_from_fo_replace(cfg.args.at_position, strip_line=True)
     while True:
         fi_line = cfg.fi.readline()
         if not fi_line:
             break
-        if cfg.args.replace and count == 0:  # if replace is on then first line is the id to be found in output file
+
+        if cfg.args.delete and count == 0:  # if replace is on then first line is the id to be found in output file
+            repl_id = fi_line
+            if cfg.args.id:
+                repl_id = repl_id.rstrip() + cfg.args.id + "\n"
+            # read from output until we detect line "repl_id" which is the start of portion to be deleted.
+            read_from_fo_replace(repl_id)
+
+        elif cfg.args.replace and count == 0:  # if replace is on then first line is the id to be found in output file
             repl_id = fi_line
             if cfg.args.id:
                 repl_id = repl_id.rstrip() + cfg.args.id + "\n"
@@ -102,8 +111,7 @@ def main():
             else:
                 cfg.fo.write(repl_id)
         else:
-            # print "in:"+l
-            if not cfg.args.delete:
+            if cfg.args.delete is False:
                 process_line(fi_line)
         count += 1
 
@@ -118,24 +126,88 @@ def main():
         read_from_fo_replace()
         if cfg.fo_repl:
             cfg.fo_repl.close()
+
     cfg.fi.close()
     cfg.fo.close()
-
-    if cfg.args.replace or cfg.args.at_position:
+    if cfg.args.replace or cfg.args.at_position or cfg.args.delete:
         os.rename(cfg.foPath, cfg.fo_replPath)
+
+    if cfg.args.permissions:
+        fo = cfg.args.output
+        if hasattr(cfg, 'fopath'):
+            fo = cfg.foPath
+        perm = cfg.args.permissions
+        new_permissions = 0
+        for c in perm['user']:
+            if c == 'r':
+                new_permissions |= stat.S_IRUSR
+            elif c == "w":
+                new_permissions |= stat.S_IWUSR
+            elif c == "x":
+                new_permissions |= stat.S_IXUSR
+        for c in perm['group']:
+            if c == 'r':
+                new_permissions |= stat.S_IRGRP
+            elif c == "w":
+                new_permissions |= stat.S_IWGRP
+            elif c == "x":
+                new_permissions |= stat.S_IXGRP
+        for c in perm['other']:
+            if c == 'r':
+                new_permissions |= stat.S_IROTH
+            elif c == "w":
+                new_permissions |= stat.S_IWOTH
+            elif c == "x":
+                new_permissions |= stat.S_IXOTH
+        
+
+        os.chmod(fo, new_permissions)
+
+
+
+
+
+def permissions_string(in_str: str):
+    """
+    parse permissions string: urwx,grwx,orwx
+    """
+    perm ={"user":"", "group":"", "other":""}
+    current_perm = ""
+    accepted_perm_groups = "ugo"
+    accepted_perm_values = "rwx"
+    separator = ","
+
+    for c in in_str:
+        if not current_perm:
+            if c not in accepted_perm_groups:
+                raise Exception(f"Permission group is not accepted: {in_str=} unexpected group={c} FYI: {accepted_perm_groups=}")
+            current_perm = c
+            continue
+        if c == separator:
+            current_perm = None
+            continue
+        if c not in accepted_perm_values:
+            raise Exception(f"Permission value is not accepted: {in_str=} unexpected value={c} FYI: {accepted_perm_values=}")
+        key = "user" if current_perm == "u" else "group" if current_perm == "g" else "other"
+        if c in perm[key]:
+            raise Exception(f"{key!s} permission has duplicate {c!s}. {in_str=}")
+        perm[key]+= c
+        
+    return perm
+
 
 
 if __name__ == "__main__":
     sp = argparse.ArgumentParser(description="Render a template with variables")
 
     sp.add_argument("-o", "--output", default=None, help="Output file. Default is stdout.")
-    sp.add_argument("-p", "--permissions", default=None, help="TODO: Octal output file permissions ex: 0755")
+    sp.add_argument("-p", "--permissions", type=permissions_string, default=None,
+                    help="Octal output file permissions ex full permissions: uwrx,grwx,orwx")
     sp.add_argument("-i", "--input", help="Template file. If not present stdin will be used")
     sp.add_argument(
         "-r",
         "--replace",
         action="store_true",
-        default=False,
         help="replace content from file between match-start and match-end ",
     )
     sp.add_argument(
@@ -148,7 +220,6 @@ if __name__ == "__main__":
         "-d",
         "--delete",
         action="store_true",
-        default=False,
         help="delete content from file between match-start and match-end",
     )
 

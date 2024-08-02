@@ -14,11 +14,15 @@ _gbl_my_console_usage(){
 usage to set: $COLOR_GREEN c set CONSOLE_ALIAS IP$COLOR_NONE\n\
 usage to del: $COLOR_GREEN c del CONSOLE_ALIAS $COLOR_NONE\n\
 usage to list: $COLOR_GREEN c $COLOR_NONE or $COLOR_GREEN c list$COLOR_NONE \n\
-FYI: to exit Ctrl + a then k"
+FYI: to exit Ctrl + a then k\n\
+\n\
+Saved console names:"
     v list -dt console
+    echo -e "\nConnected console names:"
     i=0
     for c in  $(_list_sorted_console) ; do
-        echo "$i -> $(basename $c) : $(dirname $(dirname $(dirname $c)))"
+        local usb_path=$(dirname $(dirname $(dirname $c)))
+        echo "$i -> $(basename $c) : $(v list -t console -n -F $usb_path)    $usb_path"
         i=$((i+1))
     done
 }
@@ -140,8 +144,19 @@ _gbl_my_console(){
     fi
     dev_path=/dev/$(basename $real_sys_path)
 
+    local running_screens="$(sudo ps -fax | grep -i screen | grep -i $dev_path)"
+    if [ "$running_screens" != "" ] ; then 
+        log "RUN: sudo ps -fax | grep -i screen | grep -i $dev_path"
+        sudo ps -fax | grep -i screen | grep -i $dev_path
+        err "$COLOR_RED SCREEN session already is running for '$alias' $COLOR_NONE"
+        return
+    fi
     log "Starting  screen console to $dev_path ($baudrate): to exit Ctrl + a then k"
-    sudo screen "$dev_path" "$baudrate"
+    local log_dir=/var/log/serial_console/${alias}/
+    sudo mkdir -p $log_dir
+    local log_file=$log_dir/`date '+%Y-%m-%d_%Hh_%Mm_%Ss'`.log
+    log "The session is recorded and saved in: $log_file"
+    sudo screen -L -Logfile $log_file "$dev_path" "$baudrate"
 
 }
 #gbl_Bash_Auto_Complete

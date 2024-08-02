@@ -37,7 +37,7 @@ function run_when_os_is(){
 	local req_os="$1"
 	shift
 	[ "$req_os" != "$OSID" ] && [ "$req_os" != "$OSNAME" ] && return 0
-	$@
+	"$@"
 }
 
 # receives a list of os_ids that are processed in or
