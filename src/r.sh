@@ -38,7 +38,7 @@ gblcmd_d_lib_add(){
 
 gblcmd_d_lib_list(){
 	ls -l $G_BASH_LIB/d_libs/
-	for i in $(ls -l ~/d.bl.sh/ 2>/dev/null )
+	for i in $(ls  ~/d.bl.sh/ 2>/dev/null )
     do
         local lib_name=${i:2:-6}
         [ "$lib_name" != "" ] && echo $lib_name
