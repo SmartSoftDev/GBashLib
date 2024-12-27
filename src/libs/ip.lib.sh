@@ -32,3 +32,11 @@ function parse_user_ip_port(){
 	_IP_PORT=$port
 	_IP_URI=$uri
 }
+
+declare -A IFS_MAC
+function parse_net_interface_mac_addreses(){
+	for p in $(find /sys/class/net -mindepth 1 -maxdepth 1) ; do
+		local if_name=$(basename $p)
+		IFS_MAC[$if_name]=$(cat $p/address)
+	done
+}
