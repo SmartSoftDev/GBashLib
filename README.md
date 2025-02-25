@@ -16,13 +16,13 @@ It provides several nice features:
 
 GBL provides several tools to manage what features should be included in configuration files from Home directory, like:
 - `mng_bashrc` - will manage features/files included in ~/.bashrc
-  - console - provides `c` shortcut to mange serial console commands
+  - console - provides `c` shortcut to manage serial console commands
   - find - provides shortcuts to find files and directories: `ff` and `fd` shortcuts.
   - git - provides `g` shortcut (alias with git) with autocomplete
   - git_prompt - setups the PS1 to include the branch name and the repo status
   - jump - provides the `j` shortcut for jump
   - python - provides shortcuts for python: `bp` (bpython), `pytest`, `pyclean`
-  - qt_screen_factor - implements the workarround for QT apps to scale on various monitors.
+  - qt_screen_factor - implements the workaround for QT apps to scale on various monitors.
   - ssh - provides `s` shortcut
   - systemd
   - terminal
@@ -38,7 +38,7 @@ GBL provides several tools to manage what features should be included in configu
 
 - go to the directory where you want to keep the code
 - clone the code `git clone https://github.com/SmartSoftDev/GBashLib.git`
-- run `$./GBashLib/src/scripts/install.sh`
+- run `$./GBashLib/src/scripts/install_all_goodies.sh`
 
 Alternatively you could run which will install GBashLib and all recommended mng _bashrc,_inputrc and _gitconfig
 ```
@@ -53,12 +53,12 @@ Before you can jump to your preferred paths you have to save them with `j set` c
 
 - `$ j set alias1 .` to add alias1 as jump to current directory or `j set alias2 /home/myUser/git/`.
 
-then you can jump to any of this locations:
+then you can jump to any of these locations:
 
 - `$ j alias1`
 
-`j` has intelligent autocomplete and selection feature. For ex: you can write an unique string which is part of your alias
-and `j` will autocomplete but also will select it atomatically.
+`j` has intelligent autocomplete and selection feature. For ex: you can write a unique string which is part of your alias
+and `j` will autocomplete but also will select it automatically.
 
 - `$ j 1` is equal with `$ j alias1` because "1" is unique for our example of 2 aliases ("alias1" and "alias2").
 
@@ -66,7 +66,7 @@ and `j` will autocomplete but also will select it atomatically.
 
 Before you can ssh to your preferred host you have to add it to `s` like this:
 
-- `$ s set  ALIAS1 user@ip:port` - only IP is mandatory for this command.
+- `$ s set ALIAS1 user@ip:port` - only IP is mandatory for this command.
 - `s` command adds an entry in $HOME/.ssh/config file and uses `$G_BASH_LIB/tpls/ssh_host.tpl` template for that.
 - When you set a new alias the `s` command will copy your keys (using ssh-copy-id command) to that host, that you are not prompted for password anymore. This can be skipped with `$ s set --skip-keys ALIAS...`.
 
@@ -77,7 +77,7 @@ Before you can ssh to your preferred host you have to add it to `s` like this:
 
 ## `c` - serial console with one letter and intelligent autocomplete
 
-This is calling different serial console setups. It is very usefull when you have multiple USB to Serial adapters. The best practice is to give them a specifi name based on serial number using udev like this:
+This is calling different serial console setups. It is very usefully when you have multiple USB to Serial adapters. The best practice is to give them a specific name based on serial number using udev like this:
 
 ```
 $ cat /etc/udev/rules.d/90-serial.rules
@@ -100,13 +100,13 @@ The `c` command uses `screen` serial console. And you can start the console usin
 - Can print the values so that BASH takes them as variables.
 - Stores in yaml file so it is easy to read from any program language (there is a python library that supports all v features).
 - Key=values pairs can be grouped ("type" specifier in CLI).
-- Supports GPG encryption using multiple GPG keys (for keeping secrets, passwords, etc).
+- Supports GPG encryption using multiple GPG keys (for keeping secrets, passwords, etc.).
 
 ## `tpl` - simple key=value template for configuration generation
 
 - It can generate entire files, or it can generate/replace/delete only a portion of files
 - Can generate/replace multiple variables at once.
-- Can generate/replace multipe instances of the same template in same file (based on instance ID).
+- Can generate/replace multiple instances of the same template in same file (based on instance ID).
 
 ## `uidgen` - hash generation of files or text
 
