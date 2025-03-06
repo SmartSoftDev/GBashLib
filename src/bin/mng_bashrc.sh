@@ -1,5 +1,5 @@
 #!/bin/bash
-export G_BASH_LIB=GBL_PATH
+# NOTE: src/tpls/gbl_bin.tpl.sh is sourcing this binary, where G_BASH_LIB is exported
 
 dest="$HOME/.bashrc"
 

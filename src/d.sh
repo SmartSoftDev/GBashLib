@@ -1,5 +1,6 @@
 #!/bin/bash
-export G_BASH_LIB=GBL_PATH
+# NOTE: src/tpls/gbl_bin.tpl.sh is sourcing this binary, where G_BASH_LIB is exported
+
 if [ "$1" != "_print_autocomplete" ] ; then
 	if [ ! -f ./d.bl.sh ] ; then
 		echo "there is no ./d.bl.sh to run in this directory"

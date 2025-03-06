@@ -1,5 +1,6 @@
 # this library emulate j command
 . $(gbl log)
+
 function j(){
     local alias="$1" were
     where=$(v get -t path "$alias")
