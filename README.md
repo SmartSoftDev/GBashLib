@@ -38,7 +38,7 @@ GBL provides several tools to manage what features should be included in configu
 
 - go to the directory where you want to keep the code
 - clone the code `git clone https://github.com/SmartSoftDev/GBashLib.git`
-- run `$./GBashLib/src/scripts/install_all_goodies.sh`
+- run `$./GBashLib/src/scripts/install_all.sh`
 
 Alternatively you could run which will install GBashLib and all recommended mng _bashrc,_inputrc and _gitconfig
 ```
