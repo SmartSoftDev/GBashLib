@@ -13,7 +13,14 @@ function nginx_install_service(){
     if [ "$#" -eq 0 ] ; then v_cmd="" ; fi
 
     #config nginx
-    sudo tpl -i "$tpl_path" -o "$NGINX_CFG" "$v_cmd" $@
+    # global port redirection can be done by exporting PORT_80=XXX
+    [ "x$PORT_80" == "x" ] && PORT_80=80
+    [ "x$PORT_443" == "x" ] && PORT_443=443
+
+    sudo tpl -i "$tpl_path" -o "$NGINX_CFG" "$v_cmd" \
+        PORT_80="$PORT_80" \
+        PORT_443="$PORT_443" \
+        $@
     sudo ln -sf "$NGINX_CFG" "/etc/nginx/sites-enabled/"
     sudo nginx -t || fatal "NGINX configuration failed"
     sudo systemctl restart nginx.service
