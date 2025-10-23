@@ -200,3 +200,4 @@ if type complete > /dev/null 2>&1 ; then
 fi
 
 alias s="_gbl_my_ssh"
+echo "bla"
