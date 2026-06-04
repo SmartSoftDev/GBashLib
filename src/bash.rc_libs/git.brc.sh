@@ -12,7 +12,7 @@ alias g='git'
 alias gg='git grep -n'
 alias gs='git st'
 alias gd='git diff'
-alias gl="git log --pretty=format:'%C(dim)%h%Creset  %C(green)%s%Creset %C(yellow)<%an>%Creset %C(dim)%cr%Creset %C(blue)%D%Creset' --name-only"
+alias gl="git log --pretty=format:'%C(dim)%h%Creset  %C(green)%s%Creset %C(yellow)<%an>%Creset %C(dim)%cr(%cs)%Creset %C(blue)%D%Creset' --name-only"
 alias gdt='git difftool -d origin/dev .'
 alias ga='git add'
 alias b='git_branch'
