@@ -11,7 +11,6 @@ function ossl_printCert(){
 	local cert_p="$1"
 	openssl x509 -noout -text -in "$cert_p"
 	openssl x509 -noout -in "$cert_p" -fingerprint
-
 }
 
 

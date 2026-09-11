@@ -8,7 +8,7 @@
 _gbl_my_ssh_usage(){
     echo -e "usage to ssh: $COLOR_GREEN s SSH_ALIAS$COLOR_NONE\n\
 usage to set: $COLOR_GREEN s set SSH_ALIAS IP$COLOR_NONE\n\
-usage to set: $COLOR_GREEN s set --ProxyJump proxyHostAlias some_user@some_host SSH_ALIAS IP$COLOR_NONE\n\
+usage to set: $COLOR_GREEN s set --skip-copy-id --template absPathToTplFile --ProxyJump proxyHostAlias some_user@some_host SSH_ALIAS IP$COLOR_NONE\n\
 usage to del: $COLOR_GREEN s del SSH_ALIAS $COLOR_NONE\n\
 usage to list: $COLOR_GREEN s$COLOR_NONE or $COLOR_GREEN s list$COLOR_NONE "
 
@@ -29,6 +29,7 @@ _gbl_my_ssh(){
         # let's parse the options
         local ProxyJump=""
         local template_file="$G_BASH_LIB/tpls/ssh_host.tpl"
+        local skip_copy_id=""
         while [[ "$2" == -* ]] ; do
             case "$2" in
             "--ProxyJump")
@@ -36,9 +37,13 @@ _gbl_my_ssh(){
                 shift
                 shift
                 ;;
-            --template)
+            "--template")
                 template_file="$3"
                 shift
+                shift
+                ;;
+            "--skip-copy-id")
+                skip_copy_id="yes"
                 shift
                 ;;
             *)
@@ -88,10 +93,11 @@ _gbl_my_ssh(){
         [ "$template_file" != "$G_BASH_LIB/tpls/ssh_host.tpl" ] && save_ip="$save_ip ${template_file#$G_BASH_LIB/tpls/}"
         
         v set -t ssh "$save_ip"
-
-        ssh-copy-id $alias || {
-            echo "could not copy ssh-id! FAIL!"
-        }
+        if [ "$skip_copy_id" == "" ] ;then
+            ssh-copy-id $alias || {
+                echo "could not copy ssh-id! FAIL!"
+            }
+        fi
         return 0;
     ;;
     "list")

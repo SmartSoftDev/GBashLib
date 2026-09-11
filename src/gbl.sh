@@ -14,6 +14,11 @@ function main(){
         if [ -f "$path" ] ; then
             echo "$path"
         fi
+    elif [ "$cmd" == "rc_lib" ] ; then
+        path=$G_BASH_LIB/bash.rc_libs/$2.brc.sh
+        if [ -f "$path" ] ; then
+            echo "$path"
+        fi
     elif [ "$cmd" == "gbl" ] ; then
         echo $G_BASH_LIB
     else
